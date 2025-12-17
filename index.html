@@ -3,18 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>踩地雷遊戲 (手機版)</title>
+    <title>踩地雷遊戲 (手機版) - 優化版</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            touch-action: manipulation; /* 防止雙指縮放 */
+            touch-action: manipulation;
         }
         
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #0a0a0a;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
             color: #e0e0e0;
             display: flex;
             flex-direction: column;
@@ -39,90 +39,160 @@
             margin-bottom: 8px;
             font-size: 2rem;
             text-shadow: 0 0 10px rgba(255, 50, 50, 0.7);
+            background: linear-gradient(90deg, #ff5555, #ffaa55);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
         
         .game-info {
             display: flex;
             justify-content: space-between;
-            background-color: #1a1a1a;
+            background-color: rgba(30, 30, 30, 0.8);
             padding: 12px;
-            border-radius: 8px;
+            border-radius: 12px;
             margin-bottom: 15px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
             flex-wrap: wrap;
+            backdrop-filter: blur(10px);
         }
         
         .info-box {
-            background-color: #0f0f0f;
-            padding: 8px 15px;
-            border-radius: 6px;
+            background: linear-gradient(135deg, #222 0%, #111 100%);
+            padding: 10px 15px;
+            border-radius: 8px;
             font-size: 1rem;
             font-weight: bold;
             min-width: 80px;
             margin: 3px;
             flex: 1;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
         }
         
         #mines-count {
             color: #ff5555;
+            text-shadow: 0 0 5px rgba(255, 85, 85, 0.5);
         }
         
         #timer {
             color: #55ff55;
+            text-shadow: 0 0 5px rgba(85, 255, 85, 0.5);
         }
         
         .mobile-controls {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+            width: 100%;
+            max-width: 400px;
+        }
+        
+        .control-btn {
+            background: linear-gradient(135deg, #333 0%, #222 100%);
+            color: #eee;
+            border: none;
+            padding: 15px 5px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: bold;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 50px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .control-btn::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 100%);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .control-btn:hover::after,
+        .control-btn:active::after {
+            opacity: 1;
+        }
+        
+        .control-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        #reveal-btn {
+            background: linear-gradient(135deg, #2d5b2d 0%, #1a3a1a 100%);
+        }
+        
+        #reveal-btn.active {
+            background: linear-gradient(135deg, #4CAF50 0%, #2d5b2d 100%);
+            box-shadow: 0 0 15px rgba(76, 175, 80, 0.4);
+        }
+        
+        #flag-btn {
+            background: linear-gradient(135deg, #7a2d2d 0%, #5a1a1a 100%);
+        }
+        
+        #flag-btn.active {
+            background: linear-gradient(135deg, #f44336 0%, #7a2d2d 100%);
+            box-shadow: 0 0 15px rgba(244, 67, 54, 0.4);
+        }
+        
+        #reset-btn {
+            background: linear-gradient(135deg, #d32f2f 0%, #a32020 100%);
+        }
+        
+        #hint-btn {
+            background: linear-gradient(135deg, #2d5b7a 0%, #1a3a5a 100%);
+        }
+        
+        #hint-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .hint-count {
+            font-size: 0.7rem;
+            margin-left: 5px;
+            background: rgba(0,0,0,0.3);
+            padding: 2px 6px;
+            border-radius: 10px;
+        }
+        
+        .control-mode {
             display: flex;
             justify-content: center;
             gap: 10px;
             margin-bottom: 15px;
+            width: 100%;
+            max-width: 400px;
         }
         
-        .control-btn {
-            background-color: #333;
+        .mode-btn {
+            background: linear-gradient(135deg, #222 0%, #111 100%);
             color: #eee;
-            border: none;
-            padding: 12px 18px;
+            border: 2px solid transparent;
+            padding: 10px 20px;
             border-radius: 8px;
             cursor: pointer;
             font-size: 0.9rem;
-            font-weight: bold;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 44px; /* 最小觸控目標大小 */
-            min-width: 44px;
             flex: 1;
+            transition: all 0.2s;
         }
         
-        .control-btn:hover, .control-btn:active {
-            background-color: #444;
-        }
-        
-        #reveal-btn {
-            background-color: #2d5b2d;
-        }
-        
-        #reveal-btn.active {
-            background-color: #4CAF50;
-        }
-        
-        #flag-btn {
-            background-color: #7a2d2d;
-        }
-        
-        #flag-btn.active {
-            background-color: #f44336;
-        }
-        
-        #reset-btn {
-            background-color: #d32f2f;
-        }
-        
-        #reset-btn:active {
-            background-color: #f44336;
-            transform: scale(0.98);
+        .mode-btn.active {
+            background: linear-gradient(135deg, #333 0%, #222 100%);
+            border-color: #4CAF50;
+            box-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
         }
         
         .difficulty {
@@ -134,18 +204,21 @@
             flex-wrap: wrap;
         }
         
-        .difficulty label {
-            font-size: 0.9rem;
-        }
-        
         select {
-            background-color: #222;
+            background: linear-gradient(135deg, #222 0%, #111 100%);
             color: #eee;
-            border: 1px solid #444;
-            padding: 10px 15px;
-            border-radius: 5px;
+            border: 2px solid #444;
+            padding: 12px 20px;
+            border-radius: 8px;
             font-size: 0.9rem;
             min-height: 44px;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        select:focus {
+            outline: none;
+            border-color: #4CAF50;
         }
         
         .game-container {
@@ -154,202 +227,309 @@
             margin-bottom: 15px;
             overflow: auto;
             max-width: 100%;
+            padding: 10px;
+            background: rgba(30, 30, 30, 0.5);
+            border-radius: 12px;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
         }
         
         #game-board {
             display: grid;
-            gap: 0;
-            background-color: #222;
+            gap: 2px;
+            background-color: #1a1a1a;
             padding: 4px;
-            border-radius: 5px;
-            box-shadow: 0 0 20px rgba(255, 0, 0, 0.1);
-            touch-action: none; /* 防止滾動 */
+            border-radius: 8px;
+            touch-action: none;
+            box-shadow: 0 0 30px rgba(255, 0, 0, 0.1);
         }
         
         .cell {
             width: 28px;
             height: 28px;
-            background-color: #333;
-            border: 1px solid #444;
+            background: linear-gradient(135deg, #3a3a3a 0%, #2a2a2a 100%);
+            border: 2px solid #444;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
             cursor: pointer;
             user-select: none;
-            transition: all 0.1s;
-            font-size: 0.8rem;
+            transition: all 0.15s ease;
+            font-size: 0.85rem;
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .cell::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 50%;
+            background: linear-gradient(to bottom, rgba(255,255,255,0.1) 0%, transparent 100%);
+            border-radius: 4px 4px 0 0;
         }
         
         .cell:active {
-            background-color: #3a3a3a;
+            transform: scale(0.95);
+            background: linear-gradient(135deg, #4a4a4a 0%, #3a3a3a 100%);
         }
         
         .cell.revealed {
-            background-color: #222;
+            background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
             cursor: default;
+            border-color: #333;
+            animation: revealAnimation 0.3s ease-out;
+        }
+        
+        @keyframes revealAnimation {
+            0% { transform: scale(0.8); opacity: 0.5; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        .cell.flagged {
+            animation: flagAnimation 0.3s ease-out;
+        }
+        
+        @keyframes flagAnimation {
+            0% { transform: scale(0.5) rotate(-30deg); }
+            100% { transform: scale(1) rotate(0); }
         }
         
         .cell.flagged::after {
             content: '🚩';
-            font-size: 12px;
+            font-size: 14px;
+            animation: flagWave 2s ease-in-out infinite;
+        }
+        
+        @keyframes flagWave {
+            0%, 100% { transform: translateY(0) rotate(0); }
+            50% { transform: translateY(-1px) rotate(5deg); }
         }
         
         .cell.mine::after {
             content: '💣';
-            font-size: 14px;
+            font-size: 16px;
+            animation: bombPulse 1s ease-in-out infinite;
+        }
+        
+        @keyframes bombPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
         }
         
         .cell.mine.revealed {
-            background-color: #441111;
+            background: linear-gradient(135deg, #441111 0%, #2a0a0a 100%);
         }
         
         .cell.mine.exploded {
-            background-color: #ff3333;
+            background: linear-gradient(135deg, #ff3333 0%, #cc0000 100%);
+            animation: explosion 0.5s ease-out;
         }
         
-        .cell.number-1 {
-            color: #2196F3;
+        @keyframes explosion {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.3); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 1; }
         }
         
-        .cell.number-2 {
-            color: #4CAF50;
+        .cell.hint {
+            animation: hintPulse 1s ease-in-out infinite;
+            box-shadow: 0 0 15px rgba(255, 255, 100, 0.8);
         }
         
-        .cell.number-3 {
-            color: #f44336;
+        @keyframes hintPulse {
+            0%, 100% { box-shadow: 0 0 10px rgba(255, 255, 100, 0.5); }
+            50% { box-shadow: 0 0 20px rgba(255, 255, 100, 1); }
         }
         
-        .cell.number-4 {
-            color: #9C27B0;
-        }
-        
-        .cell.number-5 {
-            color: #FF9800;
-        }
-        
-        .cell.number-6 {
-            color: #009688;
-        }
-        
-        .cell.number-7 {
-            color: #795548;
-        }
-        
-        .cell.number-8 {
-            color: #607D8B;
-        }
+        .cell.number-1 { color: #2196F3; font-weight: bold; }
+        .cell.number-2 { color: #4CAF50; font-weight: bold; }
+        .cell.number-3 { color: #f44336; font-weight: bold; }
+        .cell.number-4 { color: #9C27B0; font-weight: bold; }
+        .cell.number-5 { color: #FF9800; font-weight: bold; }
+        .cell.number-6 { color: #009688; font-weight: bold; }
+        .cell.number-7 { color: #795548; font-weight: bold; }
+        .cell.number-8 { color: #607D8B; font-weight: bold; }
         
         .message {
             position: fixed;
             top: 50%;
             left: 50%;
-            transform: translate(-50%, -50%);
-            background-color: rgba(0, 0, 0, 0.95);
-            padding: 25px 30px;
-            border-radius: 10px;
+            transform: translate(-50%, -50%) scale(0.9);
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.95) 0%, rgba(20, 20, 20, 0.98) 100%);
+            padding: 30px;
+            border-radius: 20px;
             text-align: center;
-            z-index: 100;
+            z-index: 1000;
             display: none;
-            box-shadow: 0 0 30px rgba(255, 50, 50, 0.5);
+            box-shadow: 0 0 50px rgba(255, 50, 50, 0.7);
             border: 2px solid #444;
-            width: 85%;
+            width: 90%;
             max-width: 400px;
+            backdrop-filter: blur(20px);
+            animation: messageAppear 0.3s ease-out forwards;
+        }
+        
+        @keyframes messageAppear {
+            0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
         }
         
         .message h2 {
             margin-bottom: 15px;
-            font-size: 1.8rem;
+            font-size: 2rem;
+            background: linear-gradient(90deg, #ff5555, #ffaa55);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
         
         .message.win h2 {
-            color: #4CAF50;
+            background: linear-gradient(90deg, #4CAF50, #8BC34A);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
         
         .message.lose h2 {
-            color: #f44336;
+            background: linear-gradient(90deg, #f44336, #ff9800);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
         
         .message button {
-            background-color: #222;
+            background: linear-gradient(135deg, #333 0%, #222 100%);
             color: #eee;
             border: none;
-            padding: 12px 24px;
-            border-radius: 6px;
+            padding: 15px 30px;
+            border-radius: 10px;
             cursor: pointer;
             font-size: 1rem;
             font-weight: bold;
-            margin-top: 15px;
-            min-height: 44px;
+            margin-top: 20px;
             width: 100%;
+            transition: all 0.2s;
+        }
+        
+        .message button:hover {
+            background: linear-gradient(135deg, #444 0%, #333 100%);
+            transform: translateY(-2px);
         }
         
         .message button:active {
-            background-color: #333;
+            transform: translateY(0);
         }
         
-        .instructions {
-            background-color: #1a1a1a;
-            padding: 15px;
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .stat-item {
+            background: rgba(255,255,255,0.1);
+            padding: 10px;
             border-radius: 8px;
-            margin-top: 15px;
-            max-width: 600px;
             font-size: 0.9rem;
         }
         
+        .settings-panel {
+            background: rgba(30, 30, 30, 0.9);
+            padding: 15px;
+            border-radius: 12px;
+            margin-top: 15px;
+            display: none;
+            animation: slideDown 0.3s ease-out;
+        }
+        
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+        }
+        
+        .instructions {
+            background: linear-gradient(135deg, rgba(30, 30, 30, 0.9) 0%, rgba(40, 40, 40, 0.9) 100%);
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+            max-width: 600px;
+            font-size: 0.9rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+        
         .instructions h3 {
-            margin-bottom: 10px;
+            margin-bottom: 15px;
             color: #f0f0f0;
-            font-size: 1.1rem;
+            font-size: 1.2rem;
+            text-align: center;
         }
         
         .instructions ul {
             text-align: left;
-            padding-left: 18px;
-            line-height: 1.5;
+            padding-left: 20px;
+            line-height: 1.6;
         }
         
         .instructions li {
-            margin-bottom: 6px;
+            margin-bottom: 8px;
+            padding-left: 5px;
         }
         
         .mobile-tips {
-            background-color: #2a2a2a;
-            padding: 10px;
-            border-radius: 6px;
-            margin-top: 10px;
+            background: linear-gradient(135deg, rgba(50, 50, 50, 0.9) 0%, rgba(40, 40, 40, 0.9) 100%);
+            padding: 12px;
+            border-radius: 10px;
+            margin-top: 15px;
             font-size: 0.85rem;
-            color: #aaa;
-        }
-        
-        .control-mode {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
-        
-        .mode-btn {
-            background-color: #222;
-            color: #eee;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 0.8rem;
-            flex: 1;
-            max-width: 150px;
-        }
-        
-        .mode-btn.active {
-            background-color: #333;
-            border: 1px solid #555;
+            color: #ccc;
+            text-align: center;
         }
         
         .longpress-hint {
             font-size: 0.8rem;
             color: #aaa;
-            margin-top: 5px;
+            margin: 10px 0;
+            text-align: center;
+        }
+        
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+        
+        .menu-btn {
+            background: linear-gradient(135deg, #333 0%, #222 100%);
+            color: #eee;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .menu-btn:active {
+            transform: scale(0.95);
         }
         
         /* 響應式設計 */
@@ -357,15 +537,16 @@
             .cell {
                 width: 26px;
                 height: 26px;
+                font-size: 0.8rem;
             }
             
             h1 {
                 font-size: 1.8rem;
             }
             
-            .info-box {
-                font-size: 0.9rem;
-                padding: 6px 12px;
+            .control-btn {
+                padding: 12px 5px;
+                font-size: 0.85rem;
             }
         }
         
@@ -373,7 +554,7 @@
             .cell {
                 width: 22px;
                 height: 22px;
-                font-size: 0.7rem;
+                font-size: 0.75rem;
             }
             
             h1 {
@@ -386,17 +567,21 @@
             
             .info-box {
                 font-size: 0.85rem;
-                padding: 5px 8px;
-                min-width: 70px;
+                padding: 8px 10px;
             }
             
             .control-btn {
-                padding: 10px 12px;
+                padding: 10px 3px;
                 font-size: 0.8rem;
+                min-height: 45px;
+            }
+            
+            .mobile-controls {
+                gap: 8px;
             }
             
             select {
-                padding: 8px 10px;
+                padding: 10px 15px;
                 font-size: 0.85rem;
             }
         }
@@ -405,28 +590,69 @@
             .cell {
                 width: 20px;
                 height: 20px;
-                font-size: 0.65rem;
+                font-size: 0.7rem;
             }
             
             .control-btn {
-                padding: 8px 10px;
+                padding: 8px 2px;
                 font-size: 0.75rem;
+                min-height: 40px;
+            }
+            
+            .mode-btn {
+                padding: 8px 10px;
+                font-size: 0.8rem;
             }
         }
         
         /* 防止文本選擇 */
         .no-select {
-            -webkit-touch-callout: none;
             -webkit-user-select: none;
-            -khtml-user-select: none;
             -moz-user-select: none;
             -ms-user-select: none;
             user-select: none;
         }
+        
+        /* 載入動畫 */
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #0a0a0a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255, 50, 50, 0.3);
+            border-top-color: #ff5555;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
+    <!-- 載入動畫 -->
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+    </div>
+    
     <div class="container">
+        <div class="top-bar">
+            <button class="menu-btn" id="menu-btn">☰ 選單</button>
+            <button class="menu-btn" id="stats-btn">📊 統計</button>
+        </div>
+        
         <header>
             <h1>踩地雷遊戲</h1>
             <p>點擊安全方格，避開地雷。長按或使用下方按鈕放置旗幟。</p>
@@ -442,6 +668,9 @@
             <div class="info-box">
                 狀態: <span id="game-status">進行中</span>
             </div>
+            <div class="info-box">
+                旗幟: <span id="flags-count">0</span>
+            </div>
         </div>
         
         <div class="control-mode">
@@ -452,10 +681,15 @@
         <div class="mobile-controls">
             <button id="reveal-btn" class="control-btn">點擊打開</button>
             <button id="flag-btn" class="control-btn">放置旗幟</button>
+            <button id="hint-btn" class="control-btn">
+                提示 <span class="hint-count" id="hint-count">3</span>
+            </button>
             <button id="reset-btn" class="control-btn">重新開始</button>
+            <button id="save-btn" class="control-btn">保存遊戲</button>
+            <button id="load-btn" class="control-btn">載入遊戲</button>
         </div>
         
-        <div class="longpress-hint">提示：長按方格也可放置/移除旗幟</div>
+        <div class="longpress-hint">提示：長按方格放置/移除旗幟 • 遊戲狀態會自動保存</div>
         
         <div class="difficulty">
             <label for="difficulty">難度:</label>
@@ -471,8 +705,49 @@
             <div id="game-board"></div>
         </div>
         
+        <!-- 設定面板 -->
+        <div class="settings-panel" id="settings-panel">
+            <h3>遊戲設定</h3>
+            <div class="setting-item">
+                <span>動畫效果</span>
+                <input type="checkbox" id="animations-toggle" checked>
+            </div>
+            <div class="setting-item">
+                <span>自動保存</span>
+                <input type="checkbox" id="autosave-toggle" checked>
+            </div>
+            <div class="setting-item">
+                <span>音效</span>
+                <input type="checkbox" id="sound-toggle">
+            </div>
+            <div class="setting-item">
+                <span>震動反饋</span>
+                <input type="checkbox" id="vibration-toggle" checked>
+            </div>
+            <div class="setting-item">
+                <span>高對比度</span>
+                <input type="checkbox" id="contrast-toggle">
+            </div>
+            <button class="control-btn" id="close-settings" style="margin-top: 10px;">關閉設定</button>
+        </div>
+        
+        <!-- 統計面板 -->
+        <div class="settings-panel" id="stats-panel">
+            <h3>遊戲統計</h3>
+            <div class="stats">
+                <div class="stat-item">總遊戲數: <span id="total-games">0</span></div>
+                <div class="stat-item">勝利次數: <span id="wins-count">0</span></div>
+                <div class="stat-item">勝率: <span id="win-rate">0%</span></div>
+                <div class="stat-item">最快時間: <span id="best-time">--</span>秒</div>
+                <div class="stat-item">總遊戲時間: <span id="total-time">0</span>秒</div>
+                <div class="stat-item">使用提示: <span id="hints-used">0</span>次</div>
+            </div>
+            <button class="control-btn" id="clear-stats" style="margin-top: 10px; background: #d32f2f;">清除統計</button>
+            <button class="control-btn" id="close-stats" style="margin-top: 10px;">關閉</button>
+        </div>
+        
         <div class="mobile-tips">
-            手機操作提示：點擊方格打開，長按方格放置旗幟，或使用下方按鈕切換模式
+            💡 提示：使用提示功能可獲得幫助，點擊右上角選單查看更多功能
         </div>
         
         <div class="instructions">
@@ -483,22 +758,35 @@
                 <li><strong>旗幟模式:</strong> 點擊方格放置/移除旗幟</li>
                 <li><strong>長按:</strong> 在任何模式下長按方格可放置/移除旗幟</li>
                 <li><strong>數字:</strong> 表示周圍8個方格中有多少個地雷</li>
-                <li><strong>安全提示:</strong> 如果打開的方格數字為0，會自動打開周圍安全的方格</li>
-                <li><strong>獲勝條件:</strong> 打開所有安全方格或正確標記所有地雷</li>
+                <li><strong>自動保存:</strong> 遊戲狀態會自動保存，可隨時恢復</li>
+                <li><strong>提示:</strong> 每日有3次提示機會，幫助您找到安全位置</li>
             </ul>
         </div>
     </div>
     
+    <!-- 勝利訊息 -->
     <div id="win-message" class="message win">
-        <h2>恭喜！你贏了！</h2>
+        <h2>🎉 恭喜！你贏了！</h2>
         <p>你成功避開了所有地雷！</p>
-        <p>用時: <span id="win-time">0</span> 秒</p>
+        <div class="stats">
+            <div class="stat-item">用時: <span id="win-time">0</span> 秒</div>
+            <div class="stat-item">旗幟: <span id="win-flags">0</span> 面</div>
+            <div class="stat-item">效率: <span id="win-efficiency">0%</span></div>
+        </div>
+        <p id="new-record" style="color: #FFD700; display: none;">🏆 新紀錄！</p>
         <button id="play-again-win">再玩一次</button>
+        <button id="share-win" style="background: #2196F3; margin-top: 10px;">分享成績</button>
     </div>
     
+    <!-- 失敗訊息 -->
     <div id="lose-message" class="message lose">
-        <h2>遊戲結束！</h2>
+        <h2>💥 遊戲結束！</h2>
         <p>你踩到了地雷！</p>
+        <div class="stats">
+            <div class="stat-item">用時: <span id="lose-time">0</span> 秒</div>
+            <div class="stat-item">進度: <span id="lose-progress">0%</span></div>
+            <div class="stat-item">剩餘地雷: <span id="lose-mines-left">0</span> 個</div>
+        </div>
         <button id="play-again-lose">再試一次</button>
     </div>
 
@@ -512,20 +800,43 @@
         let timer = 0;
         let timerInterval = null;
         let firstClick = true;
-        let isFlagMode = false; // 當前是否為旗幟模式
+        let isFlagMode = false;
         let longPressTimer = null;
-        let longPressDelay = 500; // 長按延遲時間（毫秒）
+        let longPressDelay = 500;
         let touchStartTime = 0;
-        let minesPlaced = false; // 地雷是否已經放置
+        let minesPlaced = false;
         let firstClickRow = -1;
         let firstClickCol = -1;
+        let hintsUsed = 0;
+        let maxHints = 3;
+        let lastSaveTime = 0;
+        let saveCooldown = 10000; // 10秒冷卻
         
-        // 難度設置（新增手機專用難度）
+        // 遊戲設定
+        let settings = {
+            animations: true,
+            autosave: true,
+            sound: false,
+            vibration: true,
+            highContrast: false
+        };
+        
+        // 遊戲統計
+        let stats = {
+            totalGames: 0,
+            wins: 0,
+            bestTime: Infinity,
+            totalTime: 0,
+            hintsUsed: 0,
+            lastPlayed: null
+        };
+        
+        // 難度設置
         const difficultySettings = {
             easy: { rows: 9, cols: 9, mines: 10 },
             medium: { rows: 16, cols: 16, mines: 40 },
             hard: { rows: 24, cols: 24, mines: 99 },
-            mobile: { rows: 12, cols: 12, mines: 20 } // 新增手機專用難度
+            mobile: { rows: 12, cols: 12, mines: 20 }
         };
         
         // DOM元素
@@ -533,17 +844,145 @@
         const minesCountElement = document.getElementById('mines-count');
         const timerElement = document.getElementById('timer');
         const gameStatusElement = document.getElementById('game-status');
+        const flagsCountElement = document.getElementById('flags-count');
         const difficultySelect = document.getElementById('difficulty');
         const resetButton = document.getElementById('reset-btn');
         const revealButton = document.getElementById('reveal-btn');
         const flagButton = document.getElementById('flag-btn');
+        const hintButton = document.getElementById('hint-btn');
+        const hintCountElement = document.getElementById('hint-count');
+        const saveButton = document.getElementById('save-btn');
+        const loadButton = document.getElementById('load-btn');
         const tapModeButton = document.getElementById('tap-mode-btn');
         const flagModeButton = document.getElementById('flag-mode-btn');
         const winMessage = document.getElementById('win-message');
         const loseMessage = document.getElementById('lose-message');
         const winTimeElement = document.getElementById('win-time');
+        const winFlagsElement = document.getElementById('win-flags');
+        const winEfficiencyElement = document.getElementById('win-efficiency');
+        const loseTimeElement = document.getElementById('lose-time');
+        const loseProgressElement = document.getElementById('lose-progress');
+        const loseMinesLeftElement = document.getElementById('lose-mines-left');
+        const newRecordElement = document.getElementById('new-record');
         const playAgainWin = document.getElementById('play-again-win');
         const playAgainLose = document.getElementById('play-again-lose');
+        const shareWinButton = document.getElementById('share-win');
+        const loadingElement = document.getElementById('loading');
+        const menuButton = document.getElementById('menu-btn');
+        const statsButton = document.getElementById('stats-btn');
+        const settingsPanel = document.getElementById('settings-panel');
+        const statsPanel = document.getElementById('stats-panel');
+        const closeSettingsButton = document.getElementById('close-settings');
+        const closeStatsButton = document.getElementById('close-stats');
+        const clearStatsButton = document.getElementById('clear-stats');
+        
+        // 設定元素
+        const animationsToggle = document.getElementById('animations-toggle');
+        const autosaveToggle = document.getElementById('autosave-toggle');
+        const soundToggle = document.getElementById('sound-toggle');
+        const vibrationToggle = document.getElementById('vibration-toggle');
+        const contrastToggle = document.getElementById('contrast-toggle');
+        
+        // 統計顯示元素
+        const totalGamesElement = document.getElementById('total-games');
+        const winsCountElement = document.getElementById('wins-count');
+        const winRateElement = document.getElementById('win-rate');
+        const bestTimeElement = document.getElementById('best-time');
+        const totalTimeElement = document.getElementById('total-time');
+        const hintsUsedElement = document.getElementById('hints-used');
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            // 載入設定和統計
+            loadSettings();
+            loadStats();
+            
+            // 初始化遊戲
+            initGame();
+            
+            // 隱藏載入畫面
+            setTimeout(() => {
+                loadingElement.style.opacity = '0';
+                setTimeout(() => {
+                    loadingElement.style.display = 'none';
+                }, 300);
+            }, 500);
+            
+            // 自動保存檢查
+            setInterval(autoSaveIfNeeded, 30000); // 每30秒檢查
+        });
+        
+        // 載入設定
+        function loadSettings() {
+            const saved = localStorage.getItem('minesweeper_settings');
+            if (saved) {
+                settings = JSON.parse(saved);
+                updateSettingsUI();
+            }
+        }
+        
+        // 保存設定
+        function saveSettings() {
+            localStorage.setItem('minesweeper_settings', JSON.stringify(settings));
+        }
+        
+        // 更新設定UI
+        function updateSettingsUI() {
+            animationsToggle.checked = settings.animations;
+            autosaveToggle.checked = settings.autosave;
+            soundToggle.checked = settings.sound;
+            vibrationToggle.checked = settings.vibration;
+            contrastToggle.checked = settings.highContrast;
+            
+            // 應用高對比度
+            if (settings.highContrast) {
+                document.body.classList.add('high-contrast');
+            } else {
+                document.body.classList.remove('high-contrast');
+            }
+        }
+        
+        // 載入統計
+        function loadStats() {
+            const saved = localStorage.getItem('minesweeper_stats');
+            if (saved) {
+                stats = JSON.parse(saved);
+                updateStatsUI();
+            }
+        }
+        
+        // 保存統計
+        function saveStats() {
+            localStorage.setItem('minesweeper_stats', JSON.stringify(stats));
+        }
+        
+        // 更新統計UI
+        function updateStatsUI() {
+            totalGamesElement.textContent = stats.totalGames;
+            winsCountElement.textContent = stats.wins;
+            winRateElement.textContent = stats.totalGames > 0 
+                ? Math.round((stats.wins / stats.totalGames) * 100) + '%'
+                : '0%';
+            bestTimeElement.textContent = stats.bestTime === Infinity ? '--' : stats.bestTime;
+            totalTimeElement.textContent = Math.round(stats.totalTime);
+            hintsUsedElement.textContent = stats.hintsUsed;
+        }
+        
+        // 清除統計
+        function clearStats() {
+            if (confirm('確定要清除所有遊戲統計嗎？')) {
+                stats = {
+                    totalGames: 0,
+                    wins: 0,
+                    bestTime: Infinity,
+                    totalTime: 0,
+                    hintsUsed: 0,
+                    lastPlayed: null
+                };
+                saveStats();
+                updateStatsUI();
+            }
+        }
         
         // 初始化遊戲
         function initGame() {
@@ -564,6 +1003,7 @@
             minesPlaced = false;
             firstClickRow = -1;
             firstClickCol = -1;
+            hintsUsed = 0;
             
             // 重置計時器
             clearInterval(timerInterval);
@@ -572,8 +1012,11 @@
             gameStatusElement.textContent = "進行中";
             gameStatusElement.style.color = "#e0e0e0";
             
-            // 更新地雷計數
+            // 更新計數顯示
             minesCountElement.textContent = minesCount;
+            flagsCountElement.textContent = flagsCount;
+            hintCountElement.textContent = maxHints - hintsUsed;
+            hintButton.disabled = false;
             
             // 重置模式按鈕
             updateModeButtons();
@@ -585,11 +1028,189 @@
             // 隱藏訊息
             winMessage.style.display = "none";
             loseMessage.style.display = "none";
+            settingsPanel.style.display = "none";
+            statsPanel.style.display = "none";
+            
+            // 嘗試載入保存的遊戲
+            loadSavedGame();
+        }
+        
+        // 載入保存的遊戲
+        function loadSavedGame() {
+            const saved = localStorage.getItem('minesweeper_game');
+            if (!saved) return false;
+            
+            try {
+                const gameData = JSON.parse(saved);
+                
+                // 檢查難度是否匹配
+                if (gameData.difficulty !== difficultySelect.value) return false;
+                
+                // 檢查時間戳（超過1小時的保存無效）
+                if (Date.now() - gameData.timestamp > 3600000) {
+                    localStorage.removeItem('minesweeper_game');
+                    return false;
+                }
+                
+                // 恢復遊戲狀態
+                board = deserializeBoard(gameData.board);
+                timer = gameData.timer;
+                flagsCount = gameData.flagsCount;
+                gameOver = gameData.gameOver;
+                gameWon = gameData.gameWon;
+                firstClick = gameData.firstClick;
+                minesPlaced = gameData.minesPlaced;
+                hintsUsed = gameData.hintsUsed || 0;
+                
+                // 更新UI
+                timerElement.textContent = timer;
+                minesCountElement.textContent = minesCount - flagsCount;
+                flagsCountElement.textContent = flagsCount;
+                hintCountElement.textContent = maxHints - hintsUsed;
+                gameStatusElement.textContent = gameOver ? (gameWon ? "勝利" : "失敗") : "進行中";
+                
+                // 重新開始計時器
+                if (!gameOver && !firstClick) {
+                    clearInterval(timerInterval);
+                    timerInterval = setInterval(() => {
+                        timer++;
+                        timerElement.textContent = timer;
+                    }, 1000);
+                }
+                
+                // 重新渲染
+                renderBoard();
+                
+                // 顯示恢復訊息
+                showToast('已恢復上次遊戲進度');
+                return true;
+            } catch (e) {
+                console.error('載入遊戲失敗:', e);
+                return false;
+            }
+        }
+        
+        // 序列化遊戲板
+        function serializeBoard() {
+            const simplified = [];
+            for (let r = 0; r < rows; r++) {
+                simplified[r] = [];
+                for (let c = 0; c < cols; c++) {
+                    const cell = board[r][c];
+                    simplified[r][c] = {
+                        m: cell.isMine ? 1 : 0,
+                        r: cell.isRevealed ? 1 : 0,
+                        f: cell.isFlagged ? 1 : 0,
+                        n: cell.neighborMines
+                    };
+                }
+            }
+            return simplified;
+        }
+        
+        // 反序列化遊戲板
+        function deserializeBoard(data) {
+            const newBoard = [];
+            for (let r = 0; r < rows; r++) {
+                newBoard[r] = [];
+                for (let c = 0; c < cols; c++) {
+                    const cellData = data[r][c];
+                    newBoard[r][c] = {
+                        isMine: cellData.m === 1,
+                        isRevealed: cellData.r === 1,
+                        isFlagged: cellData.f === 1,
+                        neighborMines: cellData.n
+                    };
+                }
+            }
+            return newBoard;
+        }
+        
+        // 自動保存遊戲
+        function autoSaveIfNeeded() {
+            if (!settings.autosave || gameOver || Date.now() - lastSaveTime < saveCooldown) return;
+            
+            saveGame();
+        }
+        
+        // 保存遊戲
+        function saveGame() {
+            if (!minesPlaced || gameOver) return;
+            
+            const gameData = {
+                version: '2.0',
+                difficulty: difficultySelect.value,
+                board: serializeBoard(),
+                timer: timer,
+                flagsCount: flagsCount,
+                gameOver: gameOver,
+                gameWon: gameWon,
+                firstClick: firstClick,
+                minesPlaced: minesPlaced,
+                hintsUsed: hintsUsed,
+                timestamp: Date.now()
+            };
+            
+            localStorage.setItem('minesweeper_game', JSON.stringify(gameData));
+            lastSaveTime = Date.now();
+            
+            if (settings.autosave) {
+                showToast('遊戲已自動保存');
+            } else {
+                showToast('遊戲已保存');
+            }
+        }
+        
+        // 手動保存遊戲
+        function manualSaveGame() {
+            saveGame();
+        }
+        
+        // 顯示提示
+        function showToast(message, duration = 2000) {
+            // 移除現有提示
+            const existing = document.querySelector('.toast');
+            if (existing) existing.remove();
+            
+            // 創建新提示
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = message;
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%) translateY(-20px);
+                background: rgba(0, 0, 0, 0.9);
+                color: white;
+                padding: 12px 20px;
+                border-radius: 10px;
+                z-index: 10000;
+                opacity: 0;
+                transition: all 0.3s ease;
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+                border: 1px solid #444;
+                font-size: 0.9rem;
+            `;
+            
+            document.body.appendChild(toast);
+            
+            // 顯示動畫
+            setTimeout(() => {
+                toast.style.opacity = '1';
+                toast.style.transform = 'translateX(-50%) translateY(0)';
+            }, 10);
+            
+            // 隱藏動畫
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(-50%) translateY(-20px)';
+                setTimeout(() => toast.remove(), 300);
+            }, duration);
         }
         
         // 創建遊戲板數據結構
         function createBoard() {
-            // 初始化二維數組
             for (let r = 0; r < rows; r++) {
                 board[r] = [];
                 for (let c = 0; c < cols; c++) {
@@ -603,9 +1224,9 @@
             }
         }
         
-        // 放置地雷（避免第一次點擊的位置）
+        // 放置地雷
         function placeMines(firstRow, firstCol) {
-            if (minesPlaced) return; // 防止重複放置
+            if (minesPlaced) return;
             
             let minesPlacedCount = 0;
             
@@ -613,7 +1234,6 @@
                 const r = Math.floor(Math.random() * rows);
                 const c = Math.floor(Math.random() * cols);
                 
-                // 確保第一個點擊的位置不是地雷
                 if ((r === firstRow && c === firstCol) || board[r][c].isMine) {
                     continue;
                 }
@@ -621,7 +1241,6 @@
                 board[r][c].isMine = true;
                 minesPlacedCount++;
                 
-                // 更新周圍方格的鄰近地雷計數
                 for (let dr = -1; dr <= 1; dr++) {
                     for (let dc = -1; dc <= 1; dc++) {
                         const nr = r + dr;
@@ -635,12 +1254,10 @@
             }
             
             minesPlaced = true;
-            console.log(`已放置 ${minesPlacedCount} 個地雷`);
         }
         
         // 渲染遊戲板
         function renderBoard() {
-            // 設置網格大小
             gameBoard.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
             gameBoard.innerHTML = "";
             
@@ -651,43 +1268,10 @@
                     cell.dataset.row = r;
                     cell.dataset.col = c;
                     
-                    // 添加觸控事件
-                    cell.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        handleCellClick(r, c);
-                    });
+                    // 優化事件處理
+                    addCellEvents(cell, r, c);
                     
-                    // 添加觸摸事件（移動設備）
-                    cell.addEventListener('touchstart', (e) => {
-                        e.preventDefault();
-                        touchStartTime = Date.now();
-                        longPressTimer = setTimeout(() => {
-                            handleLongPress(r, c);
-                        }, longPressDelay);
-                    }, { passive: false });
-                    
-                    cell.addEventListener('touchend', (e) => {
-                        e.preventDefault();
-                        clearTimeout(longPressTimer);
-                        
-                        // 如果不是長按，則處理點擊
-                        if (Date.now() - touchStartTime < longPressDelay) {
-                            handleCellClick(r, c);
-                        }
-                    }, { passive: false });
-                    
-                    cell.addEventListener('touchmove', (e) => {
-                        e.preventDefault();
-                        clearTimeout(longPressTimer);
-                    }, { passive: false });
-                    
-                    // 添加右鍵事件（桌面設備）
-                    cell.addEventListener('contextmenu', (e) => {
-                        e.preventDefault();
-                        handleRightClick(r, c);
-                    });
-                    
-                    // 更新單元格內容
+                    // 更新單元格顯示
                     updateCellDisplay(cell, r, c);
                     
                     gameBoard.appendChild(cell);
@@ -695,10 +1279,55 @@
             }
         }
         
+        // 添加單元格事件
+        function addCellEvents(cell, r, c) {
+            // 點擊事件
+            cell.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleCellClick(r, c);
+            });
+            
+            // 觸摸事件
+            cell.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                touchStartTime = Date.now();
+                longPressTimer = setTimeout(() => {
+                    handleLongPress(r, c);
+                }, longPressDelay);
+            }, { passive: false });
+            
+            cell.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                clearTimeout(longPressTimer);
+                
+                if (Date.now() - touchStartTime < longPressDelay) {
+                    handleCellClick(r, c);
+                }
+            }, { passive: false });
+            
+            cell.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                clearTimeout(longPressTimer);
+            }, { passive: false });
+            
+            // 右鍵事件
+            cell.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                handleRightClick(r, c);
+            });
+        }
+        
         // 更新單元格顯示
         function updateCellDisplay(cell, r, c) {
             const cellData = board[r][c];
             cell.className = 'cell no-select';
+            
+            if (!settings.animations) {
+                cell.style.animation = 'none';
+            }
             
             if (cellData.isRevealed) {
                 cell.classList.add('revealed');
@@ -719,134 +1348,116 @@
         
         // 處理單元格點擊
         function handleCellClick(r, c) {
-            if (gameOver || board[r][c].isRevealed) {
-                return;
-            }
+            if (gameOver || board[r][c].isRevealed) return;
             
-            // 如果單元格有旗幟，需要先移除旗幟才能點擊
+            // 檢查冷卻時間
+            if (Date.now() - lastSaveTime < 100) return;
+            
             if (board[r][c].isFlagged) {
-                // 在旗幟模式下，點擊旗幟會移除旗幟
                 if (isFlagMode) {
                     toggleFlag(r, c);
-                    renderBoard();
                 }
                 return;
             }
             
-            // 如果是旗幟模式，放置/移除旗幟
             if (isFlagMode) {
                 toggleFlag(r, c);
-                renderBoard();
                 return;
             }
             
-            // 如果是第一次點擊，記錄位置並放置地雷
             if (firstClick) {
                 firstClickRow = r;
                 firstClickCol = c;
                 firstClick = false;
-                
-                // 放置地雷（避開第一次點擊的位置）
                 placeMines(r, c);
                 
-                // 開始計時器
                 clearInterval(timerInterval);
                 timerInterval = setInterval(() => {
                     timer++;
                     timerElement.textContent = timer;
                 }, 1000);
+                
+                // 更新統計
+                stats.totalGames++;
+                stats.lastPlayed = new Date().toISOString();
+                saveStats();
+                updateStatsUI();
             }
             
-            // 揭示單元格
             revealCell(r, c);
-            
-            // 檢查遊戲是否結束
             checkGameStatus();
-            
-            // 重新渲染遊戲板
-            renderBoard();
+            updateBoard();
         }
         
-        // 處理長按（放置/移除旗幟）
+        // 處理長按
         function handleLongPress(r, c) {
-            if (gameOver || board[r][c].isRevealed) {
-                return;
-            }
-            
+            if (gameOver || board[r][c].isRevealed) return;
             toggleFlag(r, c);
-            renderBoard();
             checkGameStatus();
+            updateBoard();
         }
         
         // 處理右鍵點擊
         function handleRightClick(r, c) {
-            if (gameOver || board[r][c].isRevealed) {
-                return;
-            }
-            
+            if (gameOver || board[r][c].isRevealed) return;
             toggleFlag(r, c);
-            renderBoard();
             checkGameStatus();
+            updateBoard();
         }
         
-        // 切換旗幟狀態
+        // 切換旗幟
         function toggleFlag(r, c) {
             const cellData = board[r][c];
             
-            // 如果在第一次點擊之前放置旗幟，需要先放置地雷
             if (firstClick && !minesPlaced) {
-                // 記錄第一次點擊的位置（避開旗幟位置）
                 firstClickRow = r;
                 firstClickCol = c;
                 firstClick = false;
-                
-                // 放置地雷（避開第一次點擊的位置）
                 placeMines(r, c);
                 
-                // 開始計時器
                 clearInterval(timerInterval);
                 timerInterval = setInterval(() => {
                     timer++;
                     timerElement.textContent = timer;
                 }, 1000);
+                
+                stats.totalGames++;
+                stats.lastPlayed = new Date().toISOString();
+                saveStats();
+                updateStatsUI();
             }
             
             if (cellData.isFlagged) {
                 cellData.isFlagged = false;
                 flagsCount--;
-            } else {
+            } else if (flagsCount < minesCount) {
                 cellData.isFlagged = true;
                 flagsCount++;
             }
             
-            // 更新地雷計數顯示
             minesCountElement.textContent = minesCount - flagsCount;
+            flagsCountElement.textContent = flagsCount;
+            
+            if (settings.vibration && navigator.vibrate) {
+                navigator.vibrate(50);
+            }
         }
         
-        // 揭示單元格（遞歸處理空單元格）
+        // 揭示單元格
         function revealCell(r, c) {
-            // 邊界檢查
-            if (r < 0 || r >= rows || c < 0 || c >= cols) {
-                return;
-            }
+            if (r < 0 || r >= rows || c < 0 || c >= cols) return;
             
             const cellData = board[r][c];
-            
-            // 如果已經揭示或有旗幟，則返回
-            if (cellData.isRevealed || cellData.isFlagged) {
-                return;
-            }
+            if (cellData.isRevealed || cellData.isFlagged) return;
             
             cellData.isRevealed = true;
             
-            // 如果是地雷，遊戲結束
             if (cellData.isMine) {
                 gameOver = true;
                 clearInterval(timerInterval);
                 return;
             }
             
-            // 如果沒有鄰近地雷，遞歸揭示周圍單元格
             if (cellData.neighborMines === 0) {
                 for (let dr = -1; dr <= 1; dr++) {
                     for (let dc = -1; dc <= 1; dc++) {
@@ -857,7 +1468,17 @@
             }
         }
         
-        // 更新模式按鈕狀態
+        // 更新遊戲板（增量更新）
+        function updateBoard() {
+            const cells = document.querySelectorAll('.cell');
+            cells.forEach(cell => {
+                const r = parseInt(cell.dataset.row);
+                const c = parseInt(cell.dataset.col);
+                updateCellDisplay(cell, r, c);
+            });
+        }
+        
+        // 更新模式按鈕
         function updateModeButtons() {
             if (isFlagMode) {
                 flagButton.classList.add('active');
@@ -872,26 +1493,24 @@
             }
         }
         
-        // 切換到點擊模式
+        // 設置點擊模式
         function setTapMode() {
             isFlagMode = false;
             updateModeButtons();
+            showToast('切換到點擊模式');
         }
         
-        // 切換到旗幟模式
+        // 設置旗幟模式
         function setFlagMode() {
             isFlagMode = true;
             updateModeButtons();
+            showToast('切換到旗幟模式');
         }
         
         // 檢查遊戲狀態
         function checkGameStatus() {
-            // 如果地雷還沒放置，不能獲勝
-            if (!minesPlaced) {
-                return;
-            }
+            if (!minesPlaced) return;
             
-            // 檢查是否踩到地雷
             if (gameOver && !gameWon) {
                 gameStatusElement.textContent = "失敗";
                 gameStatusElement.style.color = "#f44336";
@@ -899,7 +1518,6 @@
                 return;
             }
             
-            // 檢查是否贏得遊戲
             let allSafeCellsRevealed = true;
             let allMinesFlagged = true;
             let correctlyFlagged = true;
@@ -908,42 +1526,70 @@
                 for (let c = 0; c < cols; c++) {
                     const cellData = board[r][c];
                     
-                    // 檢查是否所有非地雷單元格都被揭示
                     if (!cellData.isMine && !cellData.isRevealed) {
                         allSafeCellsRevealed = false;
                     }
                     
-                    // 檢查是否所有地雷都被標記
                     if (cellData.isMine && !cellData.isFlagged) {
                         allMinesFlagged = false;
                     }
                     
-                    // 檢查標記是否正確（不能有錯誤標記）
                     if (cellData.isFlagged && !cellData.isMine) {
                         correctlyFlagged = false;
                     }
                 }
             }
             
-            // 獲勝條件：所有非地雷單元格都被揭示，或者所有地雷都被正確標記
-            if ((allSafeCellsRevealed) || (allMinesFlagged && correctlyFlagged)) {
+            if (allSafeCellsRevealed || (allMinesFlagged && correctlyFlagged)) {
                 gameWon = true;
                 gameOver = true;
                 clearInterval(timerInterval);
                 gameStatusElement.textContent = "勝利";
                 gameStatusElement.style.color = "#4CAF50";
                 showWinMessage();
+                
+                // 更新統計
+                stats.wins++;
+                stats.totalTime += timer;
+                stats.hintsUsed += hintsUsed;
+                
+                if (timer < stats.bestTime) {
+                    stats.bestTime = timer;
+                    newRecordElement.style.display = 'block';
+                }
+                
+                saveStats();
+                updateStatsUI();
             }
         }
         
         // 顯示勝利訊息
         function showWinMessage() {
             winTimeElement.textContent = timer;
+            winFlagsElement.textContent = flagsCount;
+            
+            const totalCells = rows * cols;
+            const revealedCells = board.flat().filter(cell => cell.isRevealed).length;
+            const efficiency = Math.round((revealedCells / (totalCells - minesCount)) * 100);
+            winEfficiencyElement.textContent = efficiency + '%';
+            
             winMessage.style.display = "block";
+            
+            if (settings.vibration && navigator.vibrate) {
+                navigator.vibrate([100, 50, 100, 50, 200]);
+            }
         }
         
         // 顯示失敗訊息
         function showLoseMessage() {
+            const totalCells = rows * cols;
+            const revealedCells = board.flat().filter(cell => cell.isRevealed && !cell.isMine).length;
+            const progress = Math.round((revealedCells / (totalCells - minesCount)) * 100);
+            
+            loseTimeElement.textContent = timer;
+            loseProgressElement.textContent = progress + '%';
+            loseMinesLeftElement.textContent = minesCount - flagsCount;
+            
             // 揭示所有地雷
             for (let r = 0; r < rows; r++) {
                 for (let c = 0; c < cols; c++) {
@@ -952,24 +1598,198 @@
                     }
                 }
             }
-            renderBoard();
+            
+            updateBoard();
             loseMessage.style.display = "block";
+            
+            if (settings.vibration && navigator.vibrate) {
+                navigator.vibrate(300);
+            }
+        }
+        
+        // 使用提示
+        function useHint() {
+            if (hintsUsed >= maxHints || gameOver || !minesPlaced) {
+                showToast('無法使用提示');
+                return;
+            }
+            
+            // 尋找可確定的位置
+            const hint = findHint();
+            if (!hint) {
+                showToast('沒有可提示的位置');
+                return;
+            }
+            
+            hintsUsed++;
+            hintCountElement.textContent = maxHints - hintsUsed;
+            
+            if (hintsUsed >= maxHints) {
+                hintButton.disabled = true;
+            }
+            
+            // 高亮提示位置
+            const cell = document.querySelector(`[data-row="${hint.row}"][data-col="${hint.col}"]`);
+            if (cell) {
+                cell.classList.add('hint');
+                setTimeout(() => cell.classList.remove('hint'), 2000);
+            }
+            
+            showToast(`提示：${hint.type === 'mine' ? '這是地雷' : '這是安全位置'}`);
+            
+            if (settings.vibration && navigator.vibrate) {
+                navigator.vibrate(100);
+            }
+        }
+        
+        // 尋找提示位置
+        function findHint() {
+            // 簡單提示算法：尋找明顯的位置
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const cell = board[r][c];
+                    if (cell.isRevealed && cell.neighborMines > 0) {
+                        const neighbors = getNeighbors(r, c);
+                        const flagged = neighbors.filter(n => n.isFlagged).length;
+                        const hidden = neighbors.filter(n => !n.isRevealed && !n.isFlagged);
+                        
+                        if (cell.neighborMines - flagged === hidden.length) {
+                            // 所有隱藏單元格都是地雷
+                            const hiddenCell = hidden[0];
+                            const index = board.flat().findIndex(c => 
+                                c === hiddenCell.cell
+                            );
+                            const row = Math.floor(index / cols);
+                            const col = index % cols;
+                            return { row, col, type: 'mine' };
+                        }
+                        
+                        if (flagged === cell.neighborMines && hidden.length > 0) {
+                            // 所有地雷都已標記，隱藏單元格是安全的
+                            const hiddenCell = hidden[0];
+                            const index = board.flat().findIndex(c => 
+                                c === hiddenCell.cell
+                            );
+                            const row = Math.floor(index / cols);
+                            const col = index % cols;
+                            return { row, col, type: 'safe' };
+                        }
+                    }
+                }
+            }
+            
+            return null;
+        }
+        
+        // 獲取鄰居單元格
+        function getNeighbors(r, c) {
+            const neighbors = [];
+            for (let dr = -1; dr <= 1; dr++) {
+                for (let dc = -1; dc <= 1; dc++) {
+                    if (dr === 0 && dc === 0) continue;
+                    const nr = r + dr;
+                    const nc = c + dc;
+                    if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) {
+                        neighbors.push({
+                            cell: board[nr][nc],
+                            row: nr,
+                            col: nc
+                        });
+                    }
+                }
+            }
+            return neighbors;
         }
         
         // 重置遊戲
         function resetGame() {
             initGame();
+            showToast('遊戲已重置');
+        }
+        
+        // 分享成績
+        function shareScore() {
+            const text = `🎮 我在踩地雷遊戲中獲得勝利！\n⏱️ 時間：${timer}秒\n🚩 旗幟：${flagsCount}面\n🏆 效率：${Math.round((board.flat().filter(cell => cell.isRevealed).length / (rows * cols - minesCount)) * 100)}%\n\n來挑戰我的紀錄吧！`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: '踩地雷遊戲成績',
+                    text: text,
+                    url: window.location.href
+                });
+            } else {
+                navigator.clipboard.writeText(text);
+                showToast('成績已複製到剪貼簿');
+            }
         }
         
         // 事件監聽器
         resetButton.addEventListener('click', resetGame);
         revealButton.addEventListener('click', setTapMode);
         flagButton.addEventListener('click', setFlagMode);
+        hintButton.addEventListener('click', useHint);
+        saveButton.addEventListener('click', manualSaveGame);
+        loadButton.addEventListener('click', () => {
+            if (loadSavedGame()) {
+                showToast('已載入保存的遊戲');
+            } else {
+                showToast('沒有找到保存的遊戲');
+            }
+        });
         tapModeButton.addEventListener('click', setTapMode);
         flagModeButton.addEventListener('click', setFlagMode);
         difficultySelect.addEventListener('change', resetGame);
         playAgainWin.addEventListener('click', resetGame);
         playAgainLose.addEventListener('click', resetGame);
+        shareWinButton.addEventListener('click', shareScore);
+        
+        // 選單按鈕
+        menuButton.addEventListener('click', () => {
+            settingsPanel.style.display = settingsPanel.style.display === 'block' ? 'none' : 'block';
+            statsPanel.style.display = 'none';
+        });
+        
+        statsButton.addEventListener('click', () => {
+            statsPanel.style.display = statsPanel.style.display === 'block' ? 'none' : 'block';
+            settingsPanel.style.display = 'none';
+        });
+        
+        closeSettingsButton.addEventListener('click', () => {
+            settingsPanel.style.display = 'none';
+        });
+        
+        closeStatsButton.addEventListener('click', () => {
+            statsPanel.style.display = 'none';
+        });
+        
+        clearStatsButton.addEventListener('click', clearStats);
+        
+        // 設定切換
+        animationsToggle.addEventListener('change', (e) => {
+            settings.animations = e.target.checked;
+            saveSettings();
+        });
+        
+        autosaveToggle.addEventListener('change', (e) => {
+            settings.autosave = e.target.checked;
+            saveSettings();
+        });
+        
+        soundToggle.addEventListener('change', (e) => {
+            settings.sound = e.target.checked;
+            saveSettings();
+        });
+        
+        vibrationToggle.addEventListener('change', (e) => {
+            settings.vibration = e.target.checked;
+            saveSettings();
+        });
+        
+        contrastToggle.addEventListener('change', (e) => {
+            settings.highContrast = e.target.checked;
+            saveSettings();
+            updateSettingsUI();
+        });
         
         // 防止滾動
         document.addEventListener('touchmove', function(e) {
@@ -978,17 +1798,20 @@
             }
         }, { passive: false });
         
-        // 初始遊戲
-        initGame();
-        
-        // 添加視窗大小調整處理
+        // 視窗大小調整
         window.addEventListener('resize', function() {
-            // 簡單的響應式調整
-            const cellSize = Math.min(28, window.innerWidth / cols - 2);
+            const cellSize = Math.min(28, Math.min(window.innerWidth / cols - 2, window.innerHeight / rows - 2));
             document.querySelectorAll('.cell').forEach(cell => {
                 cell.style.width = `${cellSize}px`;
                 cell.style.height = `${cellSize}px`;
             });
+        });
+        
+        // 頁面可見性變化（保存遊戲）
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden && settings.autosave && minesPlaced && !gameOver) {
+                saveGame();
+            }
         });
     </script>
 </body>
