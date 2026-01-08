@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>星際捕手 - 體感遊戲</title>
+    <title>星際捕手 - 體感遊戲 (優化版)</title>
     <style>
         body {
             margin: 0;
@@ -16,7 +16,6 @@
             align-items: center;
         }
 
-        /* 遊戲容器 */
         #game-container {
             position: relative;
             width: 640px;
@@ -28,24 +27,22 @@
             background: #111;
         }
 
-        /* 影片與畫布重疊 */
         video, canvas {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            transform: scaleX(-1); /* 鏡像翻轉，讓操作更直覺 */
+            transform: scaleX(-1);
         }
 
-        /* 介面 UI */
         #ui-layer {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            pointer-events: none; /* 讓點擊穿透 */
+            pointer-events: none;
             z-index: 10;
         }
 
@@ -75,17 +72,22 @@
             z-index: 20;
         }
         
-        .back-link {
-            margin-top: 20px;
-            color: #aaa;
-            text-decoration: none;
+        .back-link { margin-top: 20px; color: #aaa; text-decoration: none; }
+        
+        /* 說明文字 */
+        .instruction {
+            position: absolute;
+            bottom: 10px;
+            width: 100%;
+            text-align: center;
+            color: rgba(255,255,255,0.7);
             font-size: 14px;
         }
     </style>
 </head>
 <body>
 
-    <h2 style="margin: 10px 0;">👋 揮手接星星</h2>
+    <h2 style="margin: 10px 0;">👋 揮手接星星 (防頭部誤觸版)</h2>
 
     <div id="game-container">
         <video id="webcam" autoplay playsinline></video>
@@ -93,6 +95,7 @@
         
         <div id="ui-layer">
             <div class="score-board">分數: <span id="score">0</span></div>
+            <div class="instruction">避開中間紅框(你的頭)，用手去接旁邊的星星！</div>
             <button id="start-btn" onclick="startGame()">允許鏡頭並開始</button>
         </div>
     </div>
@@ -109,16 +112,21 @@
         let score = 0;
         let isPlaying = false;
         let prevFrame = null;
-        
-        // 遊戲物件
         let items = [];
         const maxItems = 5;
         
-        // 設定畫布尺寸
         canvas.width = 640;
         canvas.height = 480;
 
-        // 1. 啟動鏡頭
+        // 定義忽略區域 (頭部位置：中間 30% 寬度，上方 60% 高度)
+        // 這裡的座標是基於畫布的
+        const deadZone = {
+            x: canvas.width * 0.35,
+            width: canvas.width * 0.3,
+            y: 0,
+            height: canvas.height * 0.6
+        };
+
         async function startGame() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: true });
@@ -128,74 +136,75 @@
                 loop();
                 spawnItem();
             } catch (err) {
-                alert("無法存取鏡頭，請確認權限或是網址是否為 HTTPS / Localhost");
-                console.error(err);
+                alert("請允許鏡頭權限");
             }
         }
 
-        // 2. 產生掉落物
         function spawnItem() {
             if (!isPlaying) return;
             if (items.length < maxItems) {
-                const isBomb = Math.random() > 0.8; // 20% 機率是炸彈
+                // 優化：讓星星更有可能出現在兩側，避開正中間
+                let spawnX;
+                if (Math.random() > 0.5) {
+                    spawnX = Math.random() * (canvas.width * 0.3); // 左側
+                } else {
+                    spawnX = (canvas.width * 0.7) + Math.random() * (canvas.width * 0.3); // 右側
+                }
+
                 items.push({
-                    x: Math.random() * (canvas.width - 50),
+                    x: spawnX,
                     y: -50,
-                    speed: 2 + Math.random() * 3,
-                    type: isBomb ? 'bomb' : 'star',
-                    icon: isBomb ? '💣' : '🌟',
+                    speed: 3 + Math.random() * 3,
+                    type: Math.random() > 0.8 ? 'bomb' : 'star',
+                    icon: Math.random() > 0.8 ? '💣' : '🌟',
                     size: 40
                 });
             }
             setTimeout(spawnItem, 1000);
         }
 
-        // 3. 偵測動作 (簡單的像素比對)
         function detectMotion() {
-            // 畫出當前影片影格
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
             
-            const currentFrame = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            
-            // 如果還沒有上一幀，就先存起來
-            if (!prevFrame) {
-                prevFrame = currentFrame;
-                return;
-            }
+            // 繪製紅色的「頭部忽略區」框框
+            ctx.strokeStyle = "rgba(255, 0, 0, 0.3)";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(deadZone.x, deadZone.y, deadZone.width, deadZone.height);
 
-            // 比對像素
-            // 為了效能，我們每 4 個像素檢查一次 (skip pixels)
+            const currentFrame = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            if (!prevFrame) { prevFrame = currentFrame; return; }
+
             for (let i = 0; i < items.length; i++) {
                 let item = items[i];
-                let motionDetected = false;
-
-                // 檢查物件周圍的像素是否有劇烈變化
-                // 注意：因為鏡像，畫面座標需要轉換
-                // 這裡簡化處理，直接檢查該區域的像素變化量
                 
+                // 如果星星進入了「頭部忽略區」，直接跳過偵測
+                if (item.x > deadZone.x && item.x < deadZone.x + deadZone.width &&
+                    item.y > deadZone.y && item.y < deadZone.y + deadZone.height) {
+                    continue; 
+                }
+
+                // 偵測碰撞
                 const startY = Math.floor(Math.max(0, item.y));
                 const endY = Math.floor(Math.min(canvas.height, item.y + item.size));
                 const startX = Math.floor(Math.max(0, item.x));
                 const endX = Math.floor(Math.min(canvas.width, item.x + item.size));
 
-                let changeScore = 0;
+                let motionPixels = 0;
 
                 for (let y = startY; y < endY; y += 4) {
                     for (let x = startX; x < endX; x += 4) {
                         const pos = (y * canvas.width + x) * 4;
-                        // 比較 R, G, B
-                        const rDiff = Math.abs(currentFrame.data[pos] - prevFrame.data[pos]);
-                        const gDiff = Math.abs(currentFrame.data[pos+1] - prevFrame.data[pos+1]);
-                        const bDiff = Math.abs(currentFrame.data[pos+2] - prevFrame.data[pos+2]);
+                        const diff = Math.abs(currentFrame.data[pos+1] - prevFrame.data[pos+1]); // 只比對綠色通道
                         
-                        if (rDiff + gDiff + bDiff > 100) {
-                            changeScore++;
+                        // 提高閾值：必須是明顯的變化 (原本是 > 20)
+                        if (diff > 50) {
+                            motionPixels++;
                         }
                     }
                 }
 
-                // 如果變化量夠大，判定為碰到
-                if (changeScore > 5) {
+                // 提高觸發門檻：需要更多像素變動
+                if (motionPixels > 15) {
                     if (item.type === 'star') {
                         score += 10;
                         scoreEl.style.color = '#ffeb3b';
@@ -204,39 +213,29 @@
                         scoreEl.style.color = '#ff4444';
                     }
                     scoreEl.innerText = score;
-                    items.splice(i, 1); // 移除物件
+                    items.splice(i, 1);
                     i--;
                 }
             }
-
             prevFrame = currentFrame;
         }
 
-        // 4. 遊戲主迴圈
         function loop() {
             if (!isPlaying) return;
-
-            // 處理動作偵測與繪圖背景
             detectMotion(); 
-
-            // 繪製掉落物
+            
             ctx.font = "40px Arial";
             for (let i = 0; i < items.length; i++) {
                 let item = items[i];
                 item.y += item.speed;
-
                 ctx.fillText(item.icon, item.x, item.y);
-
-                // 掉出畫面移除
                 if (item.y > canvas.height) {
                     items.splice(i, 1);
                     i--;
                 }
             }
-
             requestAnimationFrame(loop);
         }
-
     </script>
 </body>
 </html>

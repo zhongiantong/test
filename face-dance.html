@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Dance Pro - 迷因節奏挑戰</title>
+    <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
+    <style>
+        body {
+            margin: 0;
+            background: #090909;
+            color: white;
+            font-family: 'Arial Black', sans-serif;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        /* 遊戲主畫面 */
+        #game-stage {
+            position: relative;
+            width: 100%;
+            max-width: 600px; /* 手機直式比例 */
+            height: 100vh;
+            background: #000;
+            border-left: 2px solid #333;
+            border-right: 2px solid #333;
+            overflow: hidden;
+        }
+
+        /* 畫布層 (影片+遊戲特效都在這) */
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* UI 層 */
+        #ui-layer {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .score {
+            font-size: 40px;
+            color: #ffeb3b;
+            text-shadow: 3px 3px 0 #000;
+            margin-top: 20px;
+            z-index: 10;
+        }
+        
+        .combo {
+            font-size: 20px;
+            color: #00d2ff;
+            font-style: italic;
+        }
+
+        /* 判定線區域 */
+        #hit-zone {
+            position: absolute;
+            bottom: 15%;
+            width: 100%;
+            height: 80px;
+            background: linear-gradient(to bottom, transparent, rgba(255, 0, 212, 0.3), transparent);
+            border-top: 2px solid #ff00d4;
+            border-bottom: 2px solid #ff00d4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: rgba(255,255,255,0.5);
+            font-size: 14px;
+        }
+
+        /* 開始按鈕與載入 */
+        #start-screen {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 50;
+        }
+
+        button {
+            background: linear-gradient(45deg, #ff0055, #ff00d4);
+            border: none;
+            padding: 20px 50px;
+            font-size: 24px;
+            color: white;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 0 20px #ff00d4;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+
+        /* 錄影下載按鈕 (遊戲結束後顯示) */
+        #download-btn {
+            display: none;
+            margin-top: 20px;
+            background: #00d2ff;
+            box-shadow: 0 0 20px #00d2ff;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="game-stage">
+        <canvas id="game-canvas"></canvas>
+
+        <div id="hit-zone">在此處做表情！</div>
+
+        <div id="ui-layer">
+            <div class="score" id="score">0</div>
+            <div class="combo" id="combo">COMBO: 0</div>
+        </div>
+
+        <div id="start-screen">
+            <h1 style="color:#00d2ff; text-shadow:0 0 10px blue; margin-bottom:5px;">Face Dance Pro</h1>
+            <p id="status-text" style="color:#aaa; margin-bottom:30px;">載入 AI 模型中...</p>
+            <button id="start-btn" style="display:none;" onclick="initGame()">🔥 開始挑戰</button>
+            <button id="download-btn" onclick="downloadVideo()">💾 下載我的表演</button>
+        </div>
+    </div>
+
+    <script>
+        // 設定
+        const GAME_SPEED = 4; // 音符落下速度
+        const SPAWN_RATE = 1500; // 音符生成間隔 (毫秒)
+        const HIT_Y_PERCENT = 0.85; // 判定線位置 (0~1)
+        
+        // 變數
+        let video, canvas, ctx;
+        let isPlaying = false;
+        let score = 0;
+        let combo = 0;
+        let lastTime = 0;
+        let notes = []; // 存放畫面上的音符
+        let currentExpression = 'neutral'; // 當前偵測到的表情
+        let mouthOpen = false; // 是否張嘴
+        
+        // 錄影相關
+        let mediaRecorder;
+        let recordedChunks = [];
+        let streamDest; // Canvas 串流
+
+        // 音訊環境
+        let audioCtx;
+
+        // 迷因/表情 定義
+        const MEMES = [
+            { type: 'happy', icon: '😄', text: 'LOL', color: '#ffd700' },
+            { type: 'surprised', icon: '😲', text: 'OMG', color: '#00d2ff' },
+            { type: 'angry', icon: '😠', text: 'Grrr', color: '#ff4444' },
+            { type: 'mouthOpen', icon: '😮', text: 'AAAA', color: '#ff00d4' }
+        ];
+
+        // 1. 初始化模型
+        async function loadModels() {
+            const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
+            try {
+                await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+                await faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL);
+                await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+                
+                document.getElementById('status-text').innerText = "準備就緒！記得開聲音";
+                document.getElementById('start-btn').style.display = 'block';
+            } catch (e) {
+                alert("模型載入失敗");
+            }
+        }
+        loadModels();
+
+        // 2. 啟動遊戲
+        async function initGame() {
+            document.getElementById('start-screen').style.display = 'none';
+            document.getElementById('download-btn').style.display = 'none';
+            
+            video = document.createElement('video');
+            canvas = document.getElementById('game-canvas');
+            ctx = canvas.getContext('2d');
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
+                video.srcObject = stream;
+                await video.play();
+
+                // 設定畫布尺寸
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+
+                // 初始化音效與錄影
+                initAudio();
+                startRecording();
+
+                isPlaying = true;
+                score = 0;
+                combo = 0;
+                notes = [];
+                
+                // 啟動迴圈
+                detectFaceLoop();
+                gameLoop();
+                spawnNoteLoop();
+
+            } catch (err) {
+                alert("無法開啟鏡頭: " + err);
+            }
+        }
+
+        // --- 核心迴圈：繪圖與遊戲邏輯 ---
+        function gameLoop(timestamp) {
+            if (!isPlaying) return;
+
+            // 1. 繪製背景 (鏡頭畫面，並水平翻轉)
+            ctx.save();
+            ctx.translate(canvas.width, 0);
+            ctx.scale(-1, 1);
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            ctx.restore();
+
+            // 2. 繪製判定線
+            const hitLineY = canvas.height * HIT_Y_PERCENT;
+            
+            // 3. 處理音符
+            updateNotes(hitLineY);
+
+            // 4. 顯示當前偵測狀態 (除錯用/視覺回饋)
+            ctx.font = "bold 20px Arial";
+            ctx.fillStyle = "rgba(255,255,255,0.7)";
+            ctx.fillText(`狀態: ${currentExpression} ${mouthOpen?'(張嘴)':''}`, 10, 30);
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // --- 臉部偵測迴圈 (獨立運行以免卡頓) ---
+        async function detectFaceLoop() {
+            while (isPlaying) {
+                const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+                    .withFaceLandmarks()
+                    .withFaceExpressions();
+
+                if (detection) {
+                    // 1. 表情判定 (取機率最高的)
+                    const exps = detection.expressions;
+                    const maxExp = Object.keys(exps).reduce((a, b) => exps[a] > exps[b] ? a : b);
+                    currentExpression = maxExp;
+
+                    // 2. 特徵點判定 (張嘴)
+                    const mouthTop = detection.landmarks.getMouth()[14]; // 上唇下緣
+                    const mouthBottom = detection.landmarks.getMouth()[18]; // 下唇上緣
+                    const mouthDist = mouthBottom.y - mouthTop.y;
+                    
+                    // 簡單判定：嘴巴距離超過某個值
+                    mouthOpen = mouthDist > 15;
+                    
+                    // 如果張嘴明顯，優先判定為張嘴
+                    if (mouthOpen && currentExpression !== 'happy') { 
+                        // 避免大笑時也被算成單純張嘴，保留一點容錯
+                        currentExpression = 'mouthOpen';
+                    }
+                }
+                // 稍微休息一下，不需要每毫秒都跑 AI
+                await new Promise(r => setTimeout(r, 100)); 
+            }
+        }
+
+        // --- 音符邏輯 ---
+        function spawnNoteLoop() {
+            if (!isPlaying) return;
+            
+            // 隨機產生一個音符
+            const target = MEMES[Math.floor(Math.random() * MEMES.length)];
+            
+            // 隨機 x 位置 (在畫面寬度 20% ~ 80% 之間)
+            const x = Math.random() * (canvas.width * 0.6) + (canvas.width * 0.2);
+
+            notes.push({
+                y: -50,
+                x: x,
+                type: target.type,
+                icon: target.icon,
+                text: target.text,
+                color: target.color,
+                active: true
+            });
+
+            // 播放節奏音效
+            playBeat();
+
+            // 下一次生成時間 (隨機一點點變化)
+            setTimeout(spawnNoteLoop, SPAWN_RATE - Math.random() * 500);
+        }
+
+        function updateNotes(hitLineY) {
+            for (let i = 0; i < notes.length; i++) {
+                let note = notes[i];
+                if (!note.active) continue;
+
+                // 移動
+                note.y += GAME_SPEED;
+
+                // 繪製音符
+                ctx.fillStyle = note.color;
+                ctx.beginPath();
+                ctx.arc(note.x, note.y, 30, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = "white";
+                ctx.font = "30px Arial";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(note.icon, note.x, note.y);
+                ctx.font = "14px Arial";
+                ctx.fillText(note.text, note.x, note.y + 45);
+
+                // 判定邏輯
+                // 距離判定線夠近
+                if (Math.abs(note.y - hitLineY) < 50) {
+                    
+                    // 檢查玩家表情是否符合
+                    let isMatch = false;
+                    if (note.type === 'mouthOpen' && mouthOpen) isMatch = true;
+                    else if (note.type === currentExpression) isMatch = true;
+
+                    if (isMatch) {
+                        // 命中！
+                        triggerHit(note.x, note.y, "PERFECT!", note.color);
+                        note.active = false;
+                        score += 100;
+                        combo++;
+                        playHitSound();
+                    }
+                }
+
+                // 錯過 (掉出畫面)
+                if (note.y > canvas.height) {
+                    note.active = false;
+                    combo = 0;
+                    triggerHit(note.x, canvas.height - 30, "MISS", "#555");
+                }
+            }
+            
+            // 更新 UI
+            document.getElementById('score').innerText = score;
+            document.getElementById('combo').innerText = "COMBO: " + combo;
+        }
+
+        function triggerHit(x, y, text, color) {
+            // 簡單的特效 (這裡為了簡化，直接畫在畫布上一幀，理想應用粒子系統)
+            ctx.fillStyle = color;
+            ctx.font = "bold 40px Arial";
+            ctx.fillText(text, x, y - 20);
+        }
+
+        // --- 音效系統 (Web Audio API) ---
+        function initAudio() {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        function playBeat() {
+            if (!audioCtx) return;
+            // 模擬一個鼓聲
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+            gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.5);
+        }
+
+        function playHitSound() {
+            if (!audioCtx) return;
+            // 模擬清脆的鈴聲
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(800, audioCtx.currentTime); // 高音
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.3);
+        }
+
+        // --- 錄影系統 ---
+        function startRecording() {
+            recordedChunks = [];
+            // 擷取 Canvas 的畫面 (30 FPS)
+            streamDest = canvas.captureStream(30);
+            
+            // 如果瀏覽器支援，同時把聲音錄進去 (雖然這裡是合成音，比較複雜，暫時只錄影像)
+            mediaRecorder = new MediaRecorder(streamDest, { mimeType: 'video/webm' });
+
+            mediaRecorder.ondataavailable = function(event) {
+                if (event.data.size > 0) {
+                    recordedChunks.push(event.data);
+                }
+            };
+            
+            mediaRecorder.start();
+        }
+
+        function stopRecording() {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+            }
+        }
+
+        function downloadVideo() {
+            const blob = new Blob(recordedChunks, { type: 'video/webm' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            document.body.appendChild(a);
+            a.style = 'display: none';
+            a.href = url;
+            a.download = 'face-dance-gameplay.webm';
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+
+        // --- 結束遊戲按鈕 (測試用，或可加入倒數計時) ---
+        // 為了簡單演示，點擊分數區域可以停止遊戲並顯示下載
+        document.getElementById('ui-layer').addEventListener('click', () => {
+           if(isPlaying) stopGame(); 
+        });
+
+        function stopGame() {
+            isPlaying = false;
+            stopRecording();
+            video.pause();
+            
+            // 顯示結算畫面
+            document.getElementById('start-screen').style.display = 'flex';
+            document.getElementById('status-text').innerText = `遊戲結束！最終得分: ${score}`;
+            document.getElementById('start-btn').innerText = "再來一局";
+            document.getElementById('start-btn').style.display = 'block';
+            document.getElementById('download-btn').style.display = 'block';
+        }
+
+    </script>
+</body>
+</html>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>隔空鋼琴</title>
+    <title>隔空鋼琴 - 區域鎖定版</title>
     <style>
         body {
             background: #222;
@@ -34,7 +34,7 @@
             height: 100%;
             transform: scaleX(-1);
             object-fit: cover;
-            opacity: 0.6; /* 讓影片稍微暗一點，凸顯琴鍵 */
+            opacity: 0.6;
         }
 
         /* 琴鍵區域 */
@@ -43,8 +43,9 @@
             bottom: 0;
             left: 0;
             width: 100%;
-            height: 120px;
+            height: 100px; /* 稍微變矮一點 */
             display: flex;
+            z-index: 10;
         }
 
         .key {
@@ -59,11 +60,29 @@
             transition: all 0.1s;
         }
 
-        /* 觸發時的樣式 */
         .key.active {
             background: rgba(0, 210, 255, 0.6);
             box-shadow: 0 0 30px #00d2ff;
             transform: scale(1.1);
+        }
+
+        /* 觸發線 (視覺輔助) */
+        .trigger-line {
+            position: absolute;
+            bottom: 100px;
+            width: 100%;
+            height: 2px;
+            background: red;
+            opacity: 0.5;
+            z-index: 5;
+        }
+        .trigger-text {
+            position: absolute;
+            bottom: 105px;
+            right: 10px;
+            color: red;
+            font-size: 12px;
+            opacity: 0.8;
         }
 
         button.start-btn {
@@ -77,18 +96,19 @@
             margin-top: 20px;
         }
         
-        canvas { display: none; } /* 隱藏運算用的畫布 */
+        canvas { display: none; }
     </style>
 </head>
 <body>
 
     <h2>🎹 隔空鋼琴</h2>
-    <p>允許鏡頭後，用手觸摸下方的虛擬琴鍵</p>
+    <p>請將手放在紅線下方操作，頭部請保持在紅線上方</p>
 
     <div class="container">
         <video id="video" playsinline></video>
-        <div class="keys-container" id="keys">
-            </div>
+        <div class="trigger-line"></div>
+        <div class="trigger-text">偵測界線</div>
+        <div class="keys-container" id="keys"></div>
     </div>
     <canvas id="canvas"></canvas>
 
@@ -102,7 +122,6 @@
         const ctx = canvas.getContext('2d');
         const keysContainer = document.getElementById('keys');
         
-        // 音階設定 (簡單的頻率)
         const notes = [
             { name: 'Do', freq: 261.63, color: '#ff595e' },
             { name: 'Re', freq: 293.66, color: '#ffca3a' },
@@ -115,7 +134,6 @@
         let prevFrame = null;
         let isRunning = false;
 
-        // 產生琴鍵 HTML
         notes.forEach((note, index) => {
             const div = document.createElement('div');
             div.className = 'key';
@@ -126,36 +144,31 @@
         });
 
         async function init() {
-            // 初始化音效
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: true });
                 video.srcObject = stream;
                 video.play();
                 
-                // 設定畫布大小與影片相同
                 video.addEventListener('loadedmetadata', () => {
-                    canvas.width = 640; // 降低解析度以提升效能
-                    canvas.height = 480;
+                    canvas.width = 320; // 降低解析度讓偵測更靈敏且快速
+                    canvas.height = 240;
                     document.querySelector('.start-btn').style.display = 'none';
                     isRunning = true;
                     detectLoop();
                 });
             } catch (e) {
-                alert("無法開啟鏡頭: " + e);
+                alert("無法開啟鏡頭");
             }
         }
 
         function playTone(index) {
             const key = document.getElementById(`key-${index}`);
-            if (key.classList.contains('active')) return; // 避免重複觸發
+            if (key.classList.contains('active')) return;
 
-            // 視覺效果
             key.classList.add('active');
             key.style.backgroundColor = notes[index].color;
             
-            // 聲音效果
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.type = 'sine';
@@ -179,31 +192,33 @@
             const currentFrame = ctx.getImageData(0, 0, canvas.width, canvas.height);
             
             if (prevFrame) {
-                // 檢查每個琴鍵區域是否有動作
                 const keyWidth = canvas.width / notes.length;
-                const keyHeight = canvas.height * 0.25; // 底部 1/4 區域
-                const startY = canvas.height - keyHeight;
+                // 重點修正：只偵測底部 15% 的高度
+                // 這樣頭部在上方完全不會影響
+                const scanHeight = canvas.height * 0.15; 
+                const startY = canvas.height - scanHeight;
 
                 for (let i = 0; i < notes.length; i++) {
                     let movement = 0;
                     const startX = i * keyWidth;
                     
-                    // 抽樣檢查該區域像素
-                    for (let y = startY; y < canvas.height; y += 10) {
-                        for (let x = startX; x < startX + keyWidth; x += 10) {
+                    // 掃描像素
+                    for (let y = startY; y < canvas.height; y += 5) {
+                        for (let x = startX; x < startX + keyWidth; x += 5) {
                             const pos = (y * canvas.width + x) * 4;
-                            const diff = Math.abs(currentFrame.data[pos+1] - prevFrame.data[pos+1]); // 只比對綠色通道省效能
-                            if (diff > 20) movement++;
+                            // 增加判定門檻 diff > 40 (原本是20)
+                            // 避免雜訊
+                            const diff = Math.abs(currentFrame.data[pos+1] - prevFrame.data[pos+1]); 
+                            if (diff > 40) movement++;
                         }
                     }
 
-                    // 如果動作量超過閾值，觸發琴鍵
-                    if (movement > 10) {
-                        playTone(notes.length - 1 - i); // 因為鏡像，順序要反過來
+                    // 觸發門檻
+                    if (movement > 5) {
+                        playTone(notes.length - 1 - i);
                     }
                 }
             }
-
             prevFrame = currentFrame;
             requestAnimationFrame(detectLoop);
         }
