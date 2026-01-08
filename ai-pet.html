@@ -69,9 +69,20 @@
             transition: transform 0.1s;
             filter: drop-shadow(0 10px 5px rgba(0,0,0,0.2));
             z-index: 10;
+            /* 讓圖片容器置中 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         #pet:active { cursor: grabbing; transform: scale(1.1) translate(-50%, -50%); }
-        #pet img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+        
+        #pet img { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: contain; 
+            pointer-events: none; 
+            transition: all 0.3s;
+        }
 
         /* 動畫類別 */
         .anim-eat { animation: eatBounce 0.5s infinite; }
@@ -150,6 +161,7 @@
             align-items: center;
             color: white;
             z-index: 999;
+            text-align: center;
         }
         #upload-btn {
             padding: 20px 40px; font-size: 24px;
@@ -157,7 +169,7 @@
             cursor: pointer; margin-top: 20px;
             color: #000; font-weight: bold;
         }
-        #loading { display: none; margin-top: 20px; color: #00e5ff; }
+        #loading { display: none; margin-top: 20px; color: #00e5ff; max-width: 80%; line-height: 1.5;}
 
     </style>
 </head>
@@ -168,7 +180,7 @@
         <p>上傳一張照片，AI 會幫你把它變成電子寵物</p>
         <button id="upload-btn" onclick="document.getElementById('file-input').click()">📁 選擇照片</button>
         <input type="file" id="file-input" accept="image/*" style="display:none">
-        <div id="loading">AI 去背運算中... (初次需約 10-20 秒)</div>
+        <div id="loading">正在嘗試 AI 去背...<br>(請稍候，若失敗將使用原圖)</div>
     </div>
 
     <div id="room">
@@ -209,27 +221,56 @@
         let happiness = 100;
         let isDragging = false;
 
-        // 1. 圖片處理 (AI 去背)
+        // 1. 圖片處理 (AI 去背 + 錯誤處理)
         fileInput.addEventListener('change', async (e) => {
             if(e.target.files.length === 0) return;
+            
+            const file = e.target.files[0];
+            const originalUrl = URL.createObjectURL(file);
+
             loadingText.style.display = 'block';
             document.getElementById('upload-btn').style.display = 'none';
 
             try {
+                // 設定 CDN 路徑，強制從網路下載模型，試圖繞過本地路徑問題
+                const config = {
+                    publicPath: "https://cdn.jsdelivr.net/npm/@imgly/background-removal-data@1.3.0/dist/"
+                };
+
                 // 呼叫去背
-                const blob = await imglyRemoveBackground(e.target.files[0]);
+                const blob = await imglyRemoveBackground(file, config);
                 const url = URL.createObjectURL(blob);
-                petImg.src = url;
                 
-                // 進入遊戲
-                uploadLayer.style.display = 'none';
-                startLifeCycle();
+                petImg.onload = () => {
+                    petImg.style.borderRadius = "0"; // 去背成功不需要圓角
+                    petImg.style.border = "none";
+                    startGame();
+                };
+                petImg.src = url;
+                console.log("AI 去背成功！");
 
             } catch (err) {
-                alert("去背失敗，請換張圖片試試");
-                location.reload();
+                console.error("AI 去背失敗，切換至備用模式:", err);
+                
+                // 失敗時的備用方案：使用原圖並加上圓形遮罩
+                alert("⚠️ 提示：\n因為瀏覽器安全限制 (CORS)，無法在本地檔案模式下進行完美去背。\n\n已為您切換至「頭像模式」開始遊戲！");
+                
+                petImg.onload = () => {
+                    // 使用原始圖片時，加上圓形遮罩讓它好看一點
+                    petImg.style.borderRadius = "50%";
+                    petImg.style.border = "5px solid white";
+                    petImg.style.boxShadow = "0 0 10px rgba(0,0,0,0.2)";
+                    petImg.style.objectFit = "cover"; // 確保填滿圓形
+                    startGame();
+                };
+                petImg.src = originalUrl;
             }
         });
+
+        function startGame() {
+            uploadLayer.style.display = 'none';
+            startLifeCycle();
+        }
 
         // 2. 狀態循環 (隨時間飢餓)
         function startLifeCycle() {
@@ -336,7 +377,7 @@
             let x = e.clientX - offsetX;
             let y = e.clientY - offsetY;
             
-            // 讓它跟著滑鼠跑 (不限制範圍，比較自由)
+            // 讓它跟著滑鼠跑
             pet.style.left = x + 'px';
             pet.style.top = y + 'px';
         });
@@ -379,7 +420,6 @@
 
             setTimeout(() => el.remove(), 1000);
         }
-
     </script>
 </body>
 </html>
