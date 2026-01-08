@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>猜數字</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #1a1a2e; color: white; text-align: center; padding-top: 50px; }
+        .container { background: #2d2d44; padding: 40px; border-radius: 10px; display: inline-block; max-width: 400px; width: 90%; }
+        input { padding: 10px; font-size: 16px; border-radius: 5px; border: none; width: 60%; margin-bottom: 20px;}
+        button { padding: 10px 20px; font-size: 16px; background: #00d2ff; color: #1a1a2e; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;}
+        button:hover { background: #00aaff; }
+        #message { margin-top: 20px; font-size: 1.2em; min-height: 30px;}
+        .back-btn { display: block; margin-top: 30px; color: #aaa; text-decoration: none; border: 1px solid #444; padding: 10px; border-radius: 5px;}
+        .back-btn:hover { background: #3d3d5c; color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 猜數字 (1-100)</h1>
+        <p>電腦已經想好了一個數字，試著猜猜看！</p>
+        <input type="number" id="guessInput" placeholder="輸入數字">
+        <button onclick="checkGuess()">猜！</button>
+        <div id="message"></div>
+        <a href="index.html" class="back-btn">← 返回遊戲大廳</a>
+    </div>
+
+    <script>
+        let randomNumber = Math.floor(Math.random() * 100) + 1;
+        let attempts = 0;
+        
+        function checkGuess() {
+            let userGuess = document.getElementById('guessInput').value;
+            let msg = document.getElementById('message');
+            attempts++;
+            
+            if (!userGuess) { msg.innerText = "請輸入數字！"; return; }
+            
+            userGuess = Number(userGuess);
+            if (userGuess === randomNumber) {
+                msg.innerHTML = `🎉 恭喜你！猜對了！<br>答案是 ${randomNumber}。<br>你用了 ${attempts} 次機會。<br><button onclick='location.reload()' style='margin-top:10px; background:#ffeb3b; color:black;'>再玩一次</button>`;
+                msg.style.color = "#00ff00";
+            } else if (userGuess > randomNumber) {
+                msg.innerText = "太大了！試小一點 👇";
+                msg.style.color = "orange";
+            } else {
+                msg.innerText = "太小了！試大一點 👆";
+                msg.style.color = "orange";
+            }
+        }
+    </script>
+</body>
+</html>

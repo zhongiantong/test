@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>踩地雷 - 我的遊戲館</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a2e;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            user-select: none; /* 防止連點時選取文字 */
+        }
+
+        h1 { margin-top: 20px; text-shadow: 0 0 10px rgba(255, 0, 0, 0.5); }
+
+        /* 頂部控制列 */
+        .controls {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 20px;
+            font-size: 1.2em;
+        }
+
+        button {
+            padding: 8px 16px;
+            background: #00d2ff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            color: #1a1a2e;
+        }
+        button:hover { background: #66e0ff; }
+        
+        .back-btn {
+            background: #2d2d44;
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            font-size: 0.9em;
+            margin-top: 20px;
+            border: 1px solid #444;
+        }
+        .back-btn:hover { background: #3d3d5c; }
+
+        /* 遊戲棋盤 */
+        #grid {
+            display: grid;
+            grid-template-columns: repeat(9, 40px);
+            grid-template-rows: repeat(9, 40px);
+            gap: 2px;
+            background: #444;
+            padding: 5px;
+            border-radius: 5px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        /* 格子樣式 */
+        .cell {
+            width: 40px;
+            height: 40px;
+            background: #2d2d44;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 3px;
+            font-size: 1.2em;
+            transition: background 0.1s;
+        }
+
+        .cell:hover { background: #3d3d5c; }
+
+        /* 已點開的格子 */
+        .cell.revealed {
+            background: #e0e0e0;
+            color: #333;
+            cursor: default;
+        }
+
+        /* 插旗與地雷 */
+        .cell.flag { background: #2d2d44; }
+        .cell.mine { background: #ff4444 !important; }
+
+        /* 數字顏色 */
+        .c1 { color: blue; }
+        .c2 { color: green; }
+        .c3 { color: red; }
+        .c4 { color: darkblue; }
+        .c5 { color: brown; }
+
+        /* 遊戲結束訊息 */
+        #status {
+            height: 30px;
+            margin: 10px 0;
+            color: #ffeb3b;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>💣 踩地雷</h1>
+    
+    <div class="controls">
+        <span>剩餘地雷: <span id="mine-count">10</span></span>
+        <button onclick="initGame()">重置遊戲</button>
+    </div>
+
+    <div id="status"></div>
+
+    <div id="grid"></div>
+
+    <a href="index.html" class="back-btn">⬅ 回到遊戲館</a>
+
+    <script>
+        const gridSize = 9;
+        const totalMines = 10;
+        let grid = [];
+        let minesLeft = totalMines;
+        let gameOver = false;
+        const gridElement = document.getElementById('grid');
+        const statusElement = document.getElementById('status');
+        const mineCountElement = document.getElementById('mine-count');
+
+        // 初始化遊戲
+        function initGame() {
+            grid = [];
+            gridElement.innerHTML = '';
+            gameOver = false;
+            minesLeft = totalMines;
+            statusElement.textContent = '';
+            updateMineCount();
+            
+            // 建立空白格子
+            for (let i = 0; i < gridSize * gridSize; i++) {
+                const cell = document.createElement('div');
+                cell.classList.add('cell');
+                cell.dataset.id = i;
+                
+                // 左鍵點擊
+                cell.addEventListener('click', () => clickCell(cell));
+                
+                // 右鍵插旗
+                cell.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                    toggleFlag(cell);
+                });
+
+                gridElement.appendChild(cell);
+                grid.push({
+                    element: cell,
+                    isMine: false,
+                    isRevealed: false,
+                    isFlagged: false,
+                    neighborMines: 0
+                });
+            }
+
+            placeMines();
+            calculateNumbers();
+        }
+
+        // 隨機放地雷
+        function placeMines() {
+            let minesPlaced = 0;
+            while (minesPlaced < totalMines) {
+                const index = Math.floor(Math.random() * (gridSize * gridSize));
+                if (!grid[index].isMine) {
+                    grid[index].isMine = true;
+                    minesPlaced++;
+                }
+            }
+        }
+
+        // 計算周圍地雷數
+        function calculateNumbers() {
+            for (let i = 0; i < grid.length; i++) {
+                if (grid[i].isMine) continue;
+                const neighbors = getNeighbors(i);
+                grid[i].neighborMines = neighbors.filter(idx => grid[idx].isMine).length;
+            }
+        }
+
+        // 取得周圍格子索引
+        function getNeighbors(index) {
+            const row = Math.floor(index / gridSize);
+            const col = index % gridSize;
+            const neighbors = [];
+
+            for (let r = -1; r <= 1; r++) {
+                for (let c = -1; c <= 1; c++) {
+                    if (r === 0 && c === 0) continue;
+                    const newRow = row + r;
+                    const newCol = col + c;
+                    if (newRow >= 0 && newRow < gridSize && newCol >= 0 && newCol < gridSize) {
+                        neighbors.push(newRow * gridSize + newCol);
+                    }
+                }
+            }
+            return neighbors;
+        }
+
+        // 點擊格子
+        function clickCell(cell) {
+            const index = parseInt(cell.dataset.id);
+            const cellData = grid[index];
+
+            if (gameOver || cellData.isRevealed || cellData.isFlagged) return;
+
+            if (cellData.isMine) {
+                explode();
+            } else {
+                reveal(index);
+                checkWin();
+            }
+        }
+
+        // 翻開格子 (遞迴擴散)
+        function reveal(index) {
+            const cellData = grid[index];
+            if (cellData.isRevealed || cellData.isFlagged) return;
+
+            cellData.isRevealed = true;
+            cellData.element.classList.add('revealed');
+
+            if (cellData.neighborMines > 0) {
+                cellData.element.textContent = cellData.neighborMines;
+                cellData.element.classList.add('c' + cellData.neighborMines);
+            } else {
+                // 如果是空白(0)，自動翻開周圍
+                const neighbors = getNeighbors(index);
+                neighbors.forEach(neighborIndex => reveal(neighborIndex));
+            }
+        }
+
+        // 插旗子
+        function toggleFlag(cell) {
+            if (gameOver) return;
+            const index = parseInt(cell.dataset.id);
+            const cellData = grid[index];
+
+            if (cellData.isRevealed) return;
+
+            cellData.isFlagged = !cellData.isFlagged;
+            if (cellData.isFlagged) {
+                cell.textContent = '🚩';
+                cell.classList.add('flag');
+                minesLeft--;
+            } else {
+                cell.textContent = '';
+                cell.classList.remove('flag');
+                minesLeft++;
+            }
+            updateMineCount();
+        }
+
+        // 踩到地雷
+        function explode() {
+            gameOver = true;
+            statusElement.textContent = "💥 遊戲結束！你踩到地雷了！";
+            statusElement.style.color = "#ff4444";
+            
+            // 顯示所有地雷
+            grid.forEach(item => {
+                if (item.isMine) {
+                    item.element.classList.add('mine');
+                    item.element.textContent = '💣';
+                }
+            });
+        }
+
+        // 檢查勝利
+        function checkWin() {
+            const revealedCount = grid.filter(c => c.isRevealed).length;
+            const safeCount = (gridSize * gridSize) - totalMines;
+
+            if (revealedCount === safeCount) {
+                gameOver = true;
+                statusElement.textContent = "🎉 恭喜！你成功掃除了所有地雷！";
+                statusElement.style.color = "#4caf50";
+            }
+        }
+
+        function updateMineCount() {
+            mineCountElement.textContent = minesLeft;
+        }
+
+        // 啟動遊戲
+        initGame();
+
+    </script>
+</body>
+</html>
