@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My AI Pet - 專屬電子寵物</title>
+    <script src="https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.3.0/dist/imgly-background-removal.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            background: #f0f4f8;
+            font-family: 'Segoe UI', sans-serif;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* 遊戲主場景：溫馨房間 */
+        #room {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            background: radial-gradient(circle at 50% 80%, #fffde7, #ffe0b2); /* 溫暖黃光 */
+            overflow: hidden;
+            cursor: default;
+        }
+
+        /* 地板裝飾 */
+        .floor {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 30%;
+            background: #8d6e63;
+            border-top: 10px solid #6d4c41;
+        }
+
+        /* 狀態列 */
+        .status-bar {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            z-index: 100;
+            width: 200px;
+        }
+        .bar-container {
+            margin: 10px 0;
+        }
+        .bar-label { font-size: 14px; color: #555; display: flex; justify-content: space-between;}
+        .progress-bg {
+            width: 100%; height: 10px; background: #eee; border-radius: 5px; overflow: hidden; margin-top: 5px;
+        }
+        .progress-fill {
+            height: 100%; width: 100%; transition: width 0.5s, background 0.3s;
+        }
+
+        /* 寵物本體 */
+        #pet {
+            position: absolute;
+            left: 50%;
+            top: 60%;
+            width: 150px;
+            height: 150px;
+            transform: translate(-50%, -50%);
+            cursor: grab;
+            transition: transform 0.1s;
+            filter: drop-shadow(0 10px 5px rgba(0,0,0,0.2));
+            z-index: 10;
+        }
+        #pet:active { cursor: grabbing; transform: scale(1.1) translate(-50%, -50%); }
+        #pet img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+
+        /* 動畫類別 */
+        .anim-eat { animation: eatBounce 0.5s infinite; }
+        .anim-happy { animation: happyShake 0.5s infinite; }
+        
+        @keyframes eatBounce {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.1, 0.9); }
+        }
+        @keyframes happyShake {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            25% { transform: translate(-50%, -50%) rotate(-10deg); }
+            75% { transform: translate(-50%, -50%) rotate(10deg); }
+            100% { transform: translate(-50%, -50%) rotate(0deg); }
+        }
+
+        /* 食物 */
+        .food {
+            position: absolute;
+            font-size: 40px;
+            animation: fall 1s ease-out forwards;
+            z-index: 5;
+        }
+        @keyframes fall {
+            to { top: 70%; opacity: 1; }
+        }
+
+        /* 愛心特效 */
+        .heart {
+            position: absolute;
+            color: #ff4081;
+            font-size: 24px;
+            animation: floatUp 1s ease-out forwards;
+            pointer-events: none;
+            z-index: 20;
+        }
+        @keyframes floatUp {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-100px) scale(1.5); opacity: 0; }
+        }
+
+        /* 控制按鈕區 */
+        .controls {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+            z-index: 100;
+        }
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 50px;
+            font-size: 18px;
+            cursor: pointer;
+            background: white;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.1s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn:active { transform: scale(0.95); }
+        .btn-feed { color: #ff9800; border: 2px solid #ff9800; }
+        .btn-play { color: #e91e63; border: 2px solid #e91e63; }
+
+        /* 上傳遮罩層 */
+        #upload-layer {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            z-index: 999;
+        }
+        #upload-btn {
+            padding: 20px 40px; font-size: 24px;
+            background: #00e5ff; border: none; border-radius: 50px;
+            cursor: pointer; margin-top: 20px;
+            color: #000; font-weight: bold;
+        }
+        #loading { display: none; margin-top: 20px; color: #00e5ff; }
+
+    </style>
+</head>
+<body>
+
+    <div id="upload-layer">
+        <h1>🐾 創造你的 AI 寵物</h1>
+        <p>上傳一張照片，AI 會幫你把它變成電子寵物</p>
+        <button id="upload-btn" onclick="document.getElementById('file-input').click()">📁 選擇照片</button>
+        <input type="file" id="file-input" accept="image/*" style="display:none">
+        <div id="loading">AI 去背運算中... (初次需約 10-20 秒)</div>
+    </div>
+
+    <div id="room">
+        <div class="floor"></div>
+
+        <div class="status-bar">
+            <h3>寵物狀態</h3>
+            <div class="bar-container">
+                <div class="bar-label"><span>🍔 飽食度</span> <span id="hunger-val">100%</span></div>
+                <div class="progress-bg"><div id="hunger-bar" class="progress-fill" style="background:#ff9800; width:100%"></div></div>
+            </div>
+            <div class="bar-container">
+                <div class="bar-label"><span>❤️ 心情值</span> <span id="happy-val">100%</span></div>
+                <div class="progress-bg"><div id="happy-bar" class="progress-fill" style="background:#e91e63; width:100%"></div></div>
+            </div>
+            <a href="index.html" style="display:block; margin-top:15px; color:#aaa; text-decoration:none; font-size:12px;">⬅ 回到首頁</a>
+        </div>
+
+        <div id="pet">
+            <img id="pet-img" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cGF0aCBmaWxsPSIjRkZDQTRCIiBkPSJNMzIgMTkyYzAtODguNCA3MS42LTE2MCAxNjAtMTYwczE2MCA3MS42IDE2MCAxNjB2OTZjMCA1My00MyA5Ni05NiA5Nkg5NmMtNTMgMC05Ni00My05Ni05NnYtOTZ6Ii8+PHBhdGggZmlsbD0iI0ZGQjM0NyIgZD0iTTgwIDE2MGMwLTQ0LjIgMzUuOC04MCA4MC04MHM4MCAzNS44IDgwIDgwdjMySDgwdi0zMnoiLz48Y2lyY2xlIGN4PSIxNTIiIGN5PSIyNDgiIHI9IjE2IiBmaWxsPSIjMzMzIi8+PGNpcmNsZSBjeD0iMjMyIiBjeT0iMjQ4IiByPSIxNiIgZmlsbD0iIzMzMyIvPjwvc3ZnPg==">
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-feed" onclick="feedPet()">🍔 餵食</button>
+            <button class="btn btn-play" onclick="playPet()">🎾 玩耍</button>
+        </div>
+    </div>
+
+    <script>
+        const pet = document.getElementById('pet');
+        const petImg = document.getElementById('pet-img');
+        const fileInput = document.getElementById('file-input');
+        const uploadLayer = document.getElementById('upload-layer');
+        const loadingText = document.getElementById('loading');
+        
+        // 狀態變數
+        let hunger = 100;
+        let happiness = 100;
+        let isDragging = false;
+
+        // 1. 圖片處理 (AI 去背)
+        fileInput.addEventListener('change', async (e) => {
+            if(e.target.files.length === 0) return;
+            loadingText.style.display = 'block';
+            document.getElementById('upload-btn').style.display = 'none';
+
+            try {
+                // 呼叫去背
+                const blob = await imglyRemoveBackground(e.target.files[0]);
+                const url = URL.createObjectURL(blob);
+                petImg.src = url;
+                
+                // 進入遊戲
+                uploadLayer.style.display = 'none';
+                startLifeCycle();
+
+            } catch (err) {
+                alert("去背失敗，請換張圖片試試");
+                location.reload();
+            }
+        });
+
+        // 2. 狀態循環 (隨時間飢餓)
+        function startLifeCycle() {
+            setInterval(() => {
+                // 降低數值
+                hunger = Math.max(0, hunger - 2);
+                happiness = Math.max(0, happiness - 3); // 心情掉比較快
+                updateUI();
+
+                // 互動反應：如果太餓或太無聊
+                if (hunger < 30) pet.style.filter = "grayscale(0.8) drop-shadow(0 10px 5px rgba(0,0,0,0.2))"; // 變灰
+                else pet.style.filter = "drop-shadow(0 10px 5px rgba(0,0,0,0.2))";
+                
+            }, 2000); // 每2秒扣一次
+        }
+
+        function updateUI() {
+            document.getElementById('hunger-bar').style.width = hunger + "%";
+            document.getElementById('hunger-val').innerText = hunger + "%";
+            document.getElementById('happy-bar').style.width = happiness + "%";
+            document.getElementById('happy-val').innerText = happiness + "%";
+        }
+
+        // 3. 餵食功能
+        function feedPet() {
+            if (hunger >= 100) {
+                showFloatingText("😋 太飽了吃不下!", pet.offsetLeft, pet.offsetTop);
+                return;
+            }
+
+            // 產生食物
+            const food = document.createElement('div');
+            food.className = 'food';
+            food.innerText = ['🍔', '🍗', '🍣', '🍩'][Math.floor(Math.random()*4)];
+            food.style.left = pet.offsetLeft + "px";
+            food.style.top = "0px";
+            document.getElementById('room').appendChild(food);
+
+            // 寵物反應
+            pet.classList.add('anim-eat');
+            
+            setTimeout(() => {
+                pet.classList.remove('anim-eat');
+                food.remove();
+                hunger = Math.min(100, hunger + 20);
+                showFloatingText("❤️ 好吃!", pet.offsetLeft, pet.offsetTop - 50);
+                spawnHearts(3);
+                updateUI();
+            }, 1000);
+        }
+
+        // 4. 玩耍/撫摸功能 (滑鼠快速移動觸發)
+        let rubCount = 0;
+        let lastMouseX = 0;
+
+        pet.addEventListener('mousemove', (e) => {
+            if (Math.abs(e.clientX - lastMouseX) > 10) { // 如果滑鼠動得很快
+                rubCount++;
+                if (rubCount > 10) { // 累積一定次數算一次撫摸
+                    triggerHappy();
+                    rubCount = 0;
+                }
+            }
+            lastMouseX = e.clientX;
+        });
+
+        // 手機觸控版撫摸
+        pet.addEventListener('touchmove', () => {
+             rubCount++;
+             if(rubCount > 5) { triggerHappy(); rubCount = 0; }
+        });
+
+        function playPet() {
+            triggerHappy();
+        }
+
+        function triggerHappy() {
+            if (pet.classList.contains('anim-happy')) return;
+            
+            happiness = Math.min(100, happiness + 15);
+            pet.classList.add('anim-happy');
+            spawnHearts(5);
+            updateUI();
+            
+            setTimeout(() => {
+                pet.classList.remove('anim-happy');
+            }, 1000);
+        }
+
+        // 5. 拖曳功能 (Draggable)
+        let offsetX, offsetY;
+
+        pet.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            // 計算滑鼠點擊點與圖片左上角的偏差
+            offsetX = e.clientX - pet.offsetLeft;
+            offsetY = e.clientY - pet.offsetTop;
+            pet.style.cursor = 'grabbing';
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            e.preventDefault();
+            let x = e.clientX - offsetX;
+            let y = e.clientY - offsetY;
+            
+            // 讓它跟著滑鼠跑 (不限制範圍，比較自由)
+            pet.style.left = x + 'px';
+            pet.style.top = y + 'px';
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+            pet.style.cursor = 'grab';
+        });
+
+        // 6. 特效工具函式
+        function spawnHearts(count) {
+            for(let i=0; i<count; i++) {
+                let heart = document.createElement('div');
+                heart.className = 'heart';
+                heart.innerText = '❤️';
+                heart.style.left = (pet.offsetLeft + (Math.random()*60 - 30)) + 'px';
+                heart.style.top = (pet.offsetTop - 50 + (Math.random()*40)) + 'px';
+                document.getElementById('room').appendChild(heart);
+                setTimeout(() => heart.remove(), 1000);
+            }
+        }
+
+        function showFloatingText(text, x, y) {
+            let el = document.createElement('div');
+            el.innerText = text;
+            el.style.position = 'absolute';
+            el.style.left = x + 'px';
+            el.style.top = y + 'px';
+            el.style.color = '#555';
+            el.style.fontWeight = 'bold';
+            el.style.pointerEvents = 'none';
+            el.style.transition = 'all 1s';
+            el.style.zIndex = 200;
+            document.getElementById('room').appendChild(el);
+            
+            setTimeout(() => {
+                el.style.top = (y - 50) + 'px';
+                el.style.opacity = 0;
+            }, 10);
+
+            setTimeout(() => el.remove(), 1000);
+        }
+
+    </script>
+</body>
+</html>

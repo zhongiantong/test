@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <title>Orbit Rhythm - 節奏圓環</title>
+    <style>
+        body { background: #1a1a2e; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; font-family: sans-serif; }
+        canvas { background: transparent; cursor: pointer; }
+        h1 { margin: 0; color: #ffeb3b; }
+        p { color: #aaa; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <h1>🎯 Perfect Circle</h1>
+    <p>當縮小的光環與白色實心圓重疊時，按下空白鍵！</p>
+    <div id="score">Combo: 0</div>
+    <canvas id="canvas" width="400" height="400"></canvas>
+    <br>
+    <a href="index.html" style="color:white; text-decoration:none;">⬅ 回到首頁</a>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const TARGET_RADIUS = 50;
+        
+        let currentRadius = 200;
+        let shrinkSpeed = 2;
+        let combo = 0;
+        let message = "";
+        let messageAlpha = 0;
+        let isPlaying = true;
+
+        function loop() {
+            if (!isPlaying) return;
+
+            // 清除畫面
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 1. 繪製中心目標圓
+            ctx.beginPath();
+            ctx.arc(200, 200, TARGET_RADIUS, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.fill();
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            // 2. 繪製縮小的動態圓
+            currentRadius -= shrinkSpeed;
+            if (currentRadius < 0) {
+                resetRing();
+                combo = 0;
+                showMessage("MISS", "red");
+            }
+
+            ctx.beginPath();
+            ctx.arc(200, 200, Math.max(0, currentRadius), 0, Math.PI * 2);
+            ctx.strokeStyle = `hsl(${combo * 10}, 100%, 50%)`; // 顏色隨 Combo 變
+            ctx.lineWidth = 5;
+            ctx.stroke();
+
+            // 3. 顯示評價文字
+            if (messageAlpha > 0) {
+                ctx.globalAlpha = messageAlpha;
+                ctx.fillStyle = message === "PERFECT" ? "#ffeb3b" : (message === "GOOD" ? "#00ff00" : "red");
+                ctx.font = "bold 40px Arial";
+                ctx.textAlign = "center";
+                ctx.fillText(message, 200, 100);
+                ctx.globalAlpha = 1;
+                messageAlpha -= 0.02;
+            }
+
+            document.getElementById('score').innerText = "Combo: " + combo;
+            requestAnimationFrame(loop);
+        }
+
+        function checkHit() {
+            // 計算誤差
+            const diff = Math.abs(currentRadius - TARGET_RADIUS);
+
+            if (diff < 5) {
+                combo++;
+                shrinkSpeed += 0.2; // 變快
+                showMessage("PERFECT", "#ffeb3b");
+            } else if (diff < 15) {
+                combo++;
+                showMessage("GOOD", "#00ff00");
+            } else {
+                combo = 0;
+                shrinkSpeed = 2; // 重置速度
+                showMessage("BAD", "red");
+            }
+            resetRing();
+        }
+
+        function resetRing() {
+            currentRadius = 200;
+        }
+
+        function showMessage(text, color) {
+            message = text;
+            messageAlpha = 1.0;
+        }
+
+        // 輸入偵測
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') checkHit();
+        });
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault(); // 防止雙擊放大
+            checkHit();
+        });
+        canvas.addEventListener('mousedown', checkHit);
+
+        loop();
+    </script>
+</body>
+</html>

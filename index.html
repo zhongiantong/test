@@ -3,160 +3,339 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我的遊戲館</title>
+    <title>NEXUS | 個人遊戲空間</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        /* --- 基礎設定 --- */
+        /* --- 全域設定 --- */
+        :root {
+            --primary: #00d2ff;
+            --secondary: #ff0055;
+            --accent: #ffeb3b;
+            --glass: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-glow: 0 0 10px rgba(0, 210, 255, 0.7);
+        }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #1a1a2e; /* 深藍色背景 */
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite; /* 背景流動動畫 */
             color: white;
-            text-align: center;
-            padding: 40px 20px;
             margin: 0;
+            min-height: 100vh;
+            overflow-x: hidden;
         }
 
-        h1 { 
-            margin-bottom: 10px; 
-            font-size: 2.5em;
-            text-shadow: 0 0 10px rgba(0, 210, 255, 0.5); /* 標題發光特效 */
-        }
-        
-        p.subtitle { color: #aaa; margin-bottom: 50px; }
-
-        /* --- 分類區塊樣式 --- */
-        .category-section {
-            margin-bottom: 60px; /* 每個分類之間的距離 */
-            max-width: 1000px;
-            margin-left: auto;
-            margin-right: auto;
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
 
-        .category-title {
-            text-align: left;
-            font-size: 1.5em;
-            color: #00d2ff; /* 霓虹藍 */
-            border-bottom: 2px solid #2d2d44;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-            margin-left: 10px;
+        /* --- 標題區 --- */
+        header {
+            text-align: center;
+            padding: 60px 20px 40px;
         }
 
-        /* --- 遊戲卡片容器 (Flexbox 排版) --- */
-        .games-grid {
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 4em;
+            margin: 0;
+            letter-spacing: 5px;
+            background: linear-gradient(to right, #fff, #00d2ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(0, 210, 255, 0.3);
+        }
+
+        p.subtitle {
+            color: #aaa;
+            font-size: 1.2em;
+            margin-top: 10px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        /* --- 容器 --- */
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 20px 80px;
+        }
+
+        /* --- 分類標題 --- */
+        .section-title {
             display: flex;
-            flex-wrap: wrap;
-            justify-content: flex-start; /* 靠左對齊 */
-            gap: 20px;
-            padding: 0 10px;
-        }
-
-        /* --- 單張卡片樣式 --- */
-        .game-card {
-            background: #2d2d44;
-            padding: 25px;
-            width: 140px; /* 卡片固定寬度 */
-            border-radius: 15px;
-            text-decoration: none; /* 去除超連結底線 */
-            color: white;
-            transition: all 0.3s ease;
-            border: 2px solid transparent;
-            display: flex;
-            flex-direction: column;
             align-items: center;
+            margin: 50px 0 30px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .section-title h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.8em;
+            margin: 0;
+            color: var(--primary);
+            text-shadow: var(--text-glow);
+        }
+
+        .section-badge {
+            background: var(--secondary);
+            font-size: 0.7em;
+            padding: 2px 10px;
+            border-radius: 20px;
+            margin-left: 15px;
+            font-weight: bold;
+            box-shadow: 0 0 10px var(--secondary);
+        }
+
+        /* --- 網格佈局 --- */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 25px;
+        }
+
+        /* --- 特大號 Hero 卡片 (給 AI Pet 用) --- */
+        .hero-card {
+            background: linear-gradient(135deg, rgba(255, 0, 85, 0.2), rgba(0, 0, 0, 0.6));
+            border: 1px solid rgba(255, 0, 85, 0.5);
+            border-radius: 20px;
+            padding: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 40px;
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s, box-shadow 0.3s;
+            text-decoration: none;
+            color: white;
             position: relative;
             overflow: hidden;
         }
 
-        /* 滑鼠移過去的特效 */
-        .game-card:hover { 
-            background: #3d3d5c; 
-            transform: translateY(-5px); /* 微微浮起 */
-            border-color: #00d2ff;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        .hero-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 0 30px rgba(255, 0, 85, 0.6);
+            border-color: #ff0055;
         }
 
-        .icon { font-size: 3em; margin-bottom: 10px; }
-        .title { font-weight: bold; font-size: 1.1em; }
-        
-        /* 卡片上的小標籤 (例如：需鏡頭) */
+        .hero-content {
+            z-index: 2;
+        }
+
+        .hero-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.5em;
+            margin: 0;
+            color: #ff0055;
+        }
+
+        .hero-desc {
+            font-size: 1.2em;
+            color: #ddd;
+            margin-top: 10px;
+            max-width: 500px;
+        }
+
+        .hero-icon {
+            font-size: 6em;
+            animation: float 3s ease-in-out infinite;
+            filter: drop-shadow(0 0 20px rgba(255,255,255,0.5));
+        }
+
+        /* --- 一般遊戲卡片 --- */
+        .card {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 30px 20px;
+            text-align: center;
+            text-decoration: none;
+            color: white;
+            backdrop-filter: blur(10px); /* 毛玻璃核心 */
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* 卡片懸停特效 */
+        .card:hover {
+            transform: translateY(-10px) scale(1.02);
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--primary);
+            box-shadow: 0 0 20px rgba(0, 210, 255, 0.4), inset 0 0 20px rgba(0, 210, 255, 0.1);
+        }
+
+        .card:hover .icon {
+            transform: scale(1.2) rotate(5deg);
+        }
+
+        .icon {
+            font-size: 3.5em;
+            margin-bottom: 15px;
+            transition: transform 0.3s;
+            filter: drop-shadow(0 5px 5px rgba(0,0,0,0.3));
+        }
+
+        .card-title {
+            font-weight: 600;
+            font-size: 1.2em;
+            margin-bottom: 5px;
+        }
+
+        .tags {
+            display: flex;
+            gap: 5px;
+            margin-top: 10px;
+        }
+
         .tag {
             font-size: 0.7em;
-            background: rgba(255,255,255,0.1);
-            padding: 2px 8px;
-            border-radius: 10px;
-            margin-top: 5px;
-            color: #aaa;
+            padding: 4px 8px;
+            border-radius: 6px;
+            background: rgba(0,0,0,0.3);
+            color: #ccc;
         }
-        .tag.hot { color: #ffeb3b; background: rgba(255, 235, 59, 0.1); }
+        .tag.new { background: var(--secondary); color: white; }
+        .tag.hot { background: var(--accent); color: #0f0c29; font-weight: bold; }
+        .tag.tech { background: var(--primary); color: #0f0c29; font-weight: bold; }
 
+        /* 裝飾用光斑 */
+        .glow-spot {
+            position: fixed;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(0,210,255,0.2) 0%, rgba(0,0,0,0) 70%);
+            pointer-events: none;
+            z-index: -1;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        /* 手機版調整 */
+        @media (max-width: 600px) {
+            h1 { font-size: 2.5em; }
+            .hero-card { flex-direction: column; text-align: center; padding: 20px; }
+            .hero-icon { margin-top: 20px; }
+            .grid { grid-template-columns: 1fr 1fr; }
+        }
     </style>
 </head>
 <body>
 
-    <h1>🎮 我的遊戲館</h1>
-    <p class="subtitle">歡迎來到我的個人遊戲作品集</p>
+    <div class="glow-spot" style="top: 20%; left: 20%; background: radial-gradient(circle, rgba(255,0,85,0.15) 0%, rgba(0,0,0,0) 70%);"></div>
+    <div class="glow-spot" style="top: 80%; left: 80%;"></div>
 
-    <div class="category-section">
-        <div class="category-title">🧠 益智與運氣</div>
-        <div class="games-grid">
-            
-            <a href="game2.html" class="game-card">
-                <div class="icon">🎯</div>
-                <div class="title">猜數字</div>
-                <div class="tag">經典</div>
-            </a>
+    <header>
+        <h1>NEXUS</h1>
+        <p class="subtitle">Next Gen Personal Game Portal</p>
+    </header>
 
-            <a href="game1.html" class="game-card">
-                <div class="icon">✊</div>
-                <div class="title">包剪揼</div>
-                <div class="tag">運氣</div>
-            </a>
-            <a href="game3.html" class="game-card">
-                <div class="icon">💣</div>
-                <div class="title">踩地雷</div>
-                <div class="tag">9x9</div>
-            </a>
+    <div class="container">
+        
+        <a href="ai-pet.html" class="hero-card">
+            <div class="hero-content">
+                <div style="color: #ff0055; font-weight:bold; letter-spacing: 2px; margin-bottom: 5px;">NEW RELEASE</div>
+                <h2 class="hero-title">My AI Pet</h2>
+                <p class="hero-desc">上傳你的照片，AI 自動去背生成你的專屬電子寵物。支援餵食、撫摸與物理互動！</p>
+                <div class="tags">
+                    <span class="tag tech">AI 技術</span>
+                    <span class="tag new">養成</span>
+                </div>
+            </div>
+            <div class="hero-icon">🐾</div>
+        </a>
 
+        <div class="section-title">
+            <h2>WebCam Motion</h2>
+            <div class="section-badge">需鏡頭</div>
         </div>
-    </div>
 
-    <div class="category-section">
-        <div class="category-title">✨ 體感與特效 (WebCam)</div>
-        <div class="games-grid">
+        <div class="grid">
+            <a href="space-dodger.html" class="card">
+                <div class="icon">🚀</div>
+                <div class="card-title">太空閃避</div>
+                <div class="tags"><span class="tag tech">體感</span><span class="tag hot">刺激</span></div>
+            </a>
             
-            <a href="face-dance.html" class="game-card">
+            <a href="face-dance-pro.html" class="card">
                 <div class="icon">🕺</div>
-                <div class="title">Face Dance</div>
-                <div class="tag hot">表情挑戰</div>
+                <div class="card-title">Face Dance</div>
+                <div class="tags"><span class="tag hot">表情包</span><span class="tag">Pro</span></div>
             </a>
 
-            <a href="galaxy-catcher.html" class="game-card">
+            <a href="rps-cam.html" class="card">
+                <div class="icon">✌️</div>
+                <div class="card-title">AI 猜拳</div>
+                <div class="tags"><span class="tag tech">AI辨識</span></div>
+            </a>
+
+            <a href="galaxy-catcher.html" class="card">
                 <div class="icon">🌌</div>
-                <div class="title">星際捕手</div>
-                <div class="tag">揮手玩</div>
+                <div class="card-title">星際捕手</div>
+                <div class="tags"><span class="tag">揮手玩</span></div>
             </a>
-
-            <a href="air-piano.html" class="game-card">
-                <div class="icon">🎹</div>
-                <div class="title">隔空鋼琴</div>
-                <div class="tag">音樂</div>
-            </a>
-
-        </div>
-    </div>
-
-    <div class="category-section">
-        <div class="category-title">🔧 開發測試區</div>
-        <div class="games-grid">
             
-            <a href="template.html" class="game-card" style="opacity: 0.6; border-style: dashed;">
-                <div class="icon">📝</div>
-                <div class="title">新遊戲模版</div>
-                <div class="tag">開發中</div>
+            <a href="air-piano.html" class="card">
+                <div class="icon">🎹</div>
+                <div class="card-title">隔空鋼琴</div>
+                <div class="tags"><span class="tag">音樂</span></div>
+            </a>
+        </div>
+
+        <div class="section-title">
+            <h2>Arcade & Puzzle</h2>
+        </div>
+
+        <div class="grid">
+            <a href="neon-runner.html" class="card">
+                <div class="icon">🏃‍♂️</div>
+                <div class="card-title">Neon Runner</div>
+                <div class="tags"><span class="tag new">跑酷</span><span class="tag">街機</span></div>
             </a>
 
-        </div>
-    </div>
+            <a href="orbit-rhythm.html" class="card">
+                <div class="icon">🎯</div>
+                <div class="card-title">Orbit Rhythm</div>
+                <div class="tags"><span class="tag">節奏</span><span class="tag">反應</span></div>
+            </a>
 
+            <a href="game3.html" class="card">
+                <div class="icon">💣</div>
+                <div class="card-title">踩地雷</div>
+                <div class="tags"><span class="tag">經典</span><span class="tag">9x9</span></div>
+            </a>
+
+            <a href="game2.html" class="card">
+                <div class="icon">🔢</div>
+                <div class="card-title">猜數字</div>
+                <div class="tags"><span class="tag">燒腦</span></div>
+            </a>
+
+            <a href="game1.html" class="card">
+                <div class="icon">✊</div>
+                <div class="card-title">包剪揼</div>
+                <div class="tags"><span class="tag">運氣</span></div>
+            </a>
+        </div>
+
+        <div style="margin-top: 80px; text-align: center; color: rgba(255,255,255,0.3); font-size: 0.9em;">
+            © 2024 NEXUS Game Station. Created with AI.
+        </div>
+
+    </div>
 </body>
 </html>

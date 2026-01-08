@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <title>Space Dodger - 體感閃避</title>
+    <style>
+        body { margin: 0; background: #000; color: white; overflow: hidden; display: flex; flex-direction: column; align-items: center; }
+        
+        #game-container { position: relative; width: 640px; height: 480px; border: 4px solid #00d2ff; margin-top: 20px; }
+        video, canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; transform: scaleX(-1); object-fit: cover; }
+        
+        /* 視覺輔助線 */
+        .divider { position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background: rgba(255,255,255,0.3); z-index: 5; }
+        
+        .ui { position: absolute; z-index: 10; color: #ffeb3b; font-size: 24px; font-weight: bold; top: 10px; left: 10px; }
+        
+        #start-btn { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 15px 30px; font-size: 20px; z-index: 20; background: #00d2ff; border: none; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h2>🚀 身體左右動一動</h2>
+    <div id="game-container">
+        <video id="webcam" autoplay playsinline></video>
+        <canvas id="canvas"></canvas>
+        <div class="divider"></div>
+        <div class="ui">Score: <span id="score">0</span></div>
+        <button id="start-btn" onclick="init()">啟動引擎</button>
+    </div>
+    <a href="index.html" style="color:#aaa; text-decoration:none; margin-top:20px;">⬅ 回到首頁</a>
+
+    <script>
+        const video = document.getElementById('webcam');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const startBtn = document.getElementById('start-btn');
+        
+        let playerX = 320; // 玩家位置
+        let prevFrame = null;
+        let obstacles = [];
+        let score = 0;
+        let isRunning = false;
+
+        async function init() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = stream;
+                video.addEventListener('loadedmetadata', () => {
+                    canvas.width = 640;
+                    canvas.height = 480;
+                    startBtn.style.display = 'none';
+                    isRunning = true;
+                    gameLoop();
+                });
+            } catch(e) { alert("請允許鏡頭權限"); }
+        }
+
+        function gameLoop() {
+            if (!isRunning) return;
+
+            // 1. 偵測動作
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            
+            if (prevFrame) {
+                let leftMotion = 0;
+                let rightMotion = 0;
+
+                // 掃描左半邊 vs 右半邊
+                for (let y = 0; y < canvas.height; y += 10) {
+                    for (let x = 0; x < canvas.width; x += 10) {
+                        const i = (y * canvas.width + x) * 4;
+                        // 簡單亮度差異
+                        const diff = Math.abs(frame.data[i] - prevFrame.data[i]);
+                        
+                        if (diff > 30) {
+                            if (x < canvas.width / 2) leftMotion++; // 左邊有動靜
+                            else rightMotion++; // 右邊有動靜
+                        }
+                    }
+                }
+
+                // 根據動量移動飛船
+                if (leftMotion > rightMotion + 50) playerX -= 8;
+                if (rightMotion > leftMotion + 50) playerX += 8;
+                
+                // 邊界限制
+                if (playerX < 20) playerX = 20;
+                if (playerX > 620) playerX = 620;
+            }
+            prevFrame = frame;
+
+            // 2. 遊戲邏輯 (繪製)
+            // 黑色半透明遮罩，讓背景變暗，凸顯飛船
+            ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 畫玩家飛船
+            ctx.fillStyle = "#00d2ff";
+            ctx.beginPath();
+            ctx.moveTo(playerX, 400);
+            ctx.lineTo(playerX - 20, 450);
+            ctx.lineTo(playerX + 20, 450);
+            ctx.fill();
+
+            // 產生隕石
+            if (Math.random() < 0.05) {
+                obstacles.push({ x: Math.random() * 640, y: -50, size: 20 + Math.random() * 30 });
+            }
+
+            // 更新隕石
+            for (let i = 0; i < obstacles.length; i++) {
+                let obs = obstacles[i];
+                obs.y += 5; // 下落速度
+
+                // 畫隕石
+                ctx.fillStyle = "#ff4444";
+                ctx.beginPath();
+                ctx.arc(obs.x, obs.y, obs.size, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 碰撞判定
+                const dist = Math.hypot(playerX - obs.x, 425 - obs.y);
+                if (dist < obs.size + 15) {
+                    score = Math.max(0, score - 10); // 撞到扣分
+                    obstacles.splice(i, 1);
+                    i--;
+                    ctx.fillStyle = "red"; // 畫面閃紅
+                    ctx.fillRect(0,0,640,480);
+                } else if (obs.y > 480) {
+                    obstacles.splice(i, 1);
+                    score++;
+                    i--;
+                }
+            }
+
+            document.getElementById('score').innerText = score;
+            requestAnimationFrame(gameLoop);
+        }
+    </script>
+</body>
+</html>
