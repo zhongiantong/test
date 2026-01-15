@@ -3,307 +3,381 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>My AI Pet 2.0 - 超級養成</title>
+    <title>My AI Pet 3.0 - Identity Recognition</title>
     <script src="https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.3.0/dist/imgly-background-removal.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <style>
         /* --- 基礎 UI --- */
-        body {
-            margin: 0;
-            background: #333;
-            font-family: 'Fredoka', sans-serif;
-            overflow: hidden;
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
+        body { margin: 0; background: #111; font-family: 'Fredoka', sans-serif; overflow: hidden; user-select: none; }
+
+        /* --- 遊戲場景 --- */
+        #game-wrapper {
+            position: relative; width: 100vw; height: 100vh;
+            transition: background 0.5s; overflow: hidden;
+            background-size: cover; background-position: center;
         }
 
-        /* 房間場景 */
-        #room {
-            position: relative;
-            width: 100vw;
-            height: 100vh;
-            background: radial-gradient(circle at 50% 50%, #fff9c4, #ffecb3); /* 亮燈狀態 */
-            transition: background 1s;
-            overflow: hidden;
-        }
-        #room.dark {
-            background: radial-gradient(circle at 50% 50%, #2c3e50, #000); /* 關燈狀態 */
-        }
-
-        /* 地板 */
-        .floor {
-            position: absolute; bottom: 0; width: 100%; height: 25%;
-            background: #795548; border-top: 8px solid #5d4037;
-        }
-
-        /* --- 狀態顯示區 (頂部) --- */
-        .top-ui {
-            position: absolute; top: 10px; left: 10px; right: 10px;
-            display: flex; gap: 5px; justify-content: center; z-index: 100;
-        }
+        /* 普通模式 */
+        .scene-normal { background: radial-gradient(circle, #fff9c4, #ffecb3); }
         
-        .stat-badge {
-            background: rgba(255,255,255,0.9);
-            padding: 5px 10px; border-radius: 20px;
-            display: flex; flex-direction: column; align-items: center;
-            width: 60px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        /* 老師模式 (高壓感) */
+        .scene-teacher { 
+            background: linear-gradient(180deg, #3e2723 0%, #5d4037 100%); 
+            box-shadow: inset 0 0 100px rgba(0,0,0,0.8);
         }
-        .stat-icon { font-size: 18px; margin-bottom: 2px; }
-        .progress-bar { width: 100%; height: 6px; background: #ddd; border-radius: 3px; overflow: hidden; }
+        .scene-teacher::before {
+            content: "NO ELECTRONIC DEVICES";
+            position: absolute; top: 5%; width: 100%; text-align: center;
+            color: rgba(255,0,0,0.3); font-family: 'Share Tech Mono', monospace; font-size: 30px; letter-spacing: 5px; pointer-events: none;
+        }
+
+        .dark-mode { filter: brightness(0.2); }
+
+        /* --- 頂部狀態 --- */
+        .top-ui { position: absolute; top: 10px; left: 10px; right: 10px; z-index: 100; display: flex; flex-direction: column; gap: 5px; }
+        .status-row { display: flex; gap: 5px; justify-content: center; }
+        .stat-badge { background: rgba(255,255,255,0.9); padding: 5px 8px; border-radius: 15px; width: 55px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .progress-bar { width: 100%; height: 5px; background: #ddd; border-radius: 3px; margin-top: 3px; overflow: hidden; }
         .progress-fill { height: 100%; width: 100%; transition: width 0.5s; }
 
-        /* --- 寵物本體與層級 --- */
+        /* --- 識別掃描特效 --- */
+        #scan-line {
+            position: absolute; top: 0; left: 0; width: 100%; height: 5px; background: #00ff00;
+            box-shadow: 0 0 10px #00ff00; opacity: 0; pointer-events: none; z-index: 50;
+        }
+        @keyframes scan { 0% { top: 0%; opacity: 1; } 50% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
+
+        /* --- 寵物本體 --- */
         #pet-container {
-            position: absolute; left: 50%; top: 55%;
-            width: 200px; height: 200px;
-            transform: translate(-50%, -50%);
-            z-index: 10;
+            position: absolute; left: 50%; top: 60%; width: 220px; height: 220px;
+            transform: translate(-50%, -50%); z-index: 10;
             display: flex; justify-content: center; align-items: center;
         }
-
-        #pet-img {
-            width: 100%; height: 100%; object-fit: contain;
-            transition: filter 0.5s;
-            pointer-events: none; /* 讓點擊穿透到容器 */
-        }
-
-        /* 寵物狀態圖層 */
-        .status-layer {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none;
-        }
-        /* 髒兮兮遮罩 */
-        #dirt-overlay {
-            background-image: radial-gradient(#5d4037 15%, transparent 16%), radial-gradient(#5d4037 15%, transparent 16%);
-            background-size: 60px 60px; background-position: 0 0, 30px 30px;
-            opacity: 0; transition: opacity 0.5s; mix-blend-mode: multiply;
-        }
+        #pet-img { width: 100%; height: 100%; object-fit: contain; transition: transform 0.2s; pointer-events: none; }
 
         /* 對話氣泡 */
         #bubble {
-            position: absolute; top: -80px; left: 50%; transform: translateX(-50%) scale(0);
-            background: white; padding: 10px 20px; border-radius: 20px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-            font-size: 14px; color: #333; white-space: nowrap;
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            z-index: 120;
+            position: absolute; top: -100px; left: 50%; transform: translateX(-50%) scale(0);
+            background: white; padding: 15px 20px; border-radius: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3); border: 2px solid #333;
+            font-size: 16px; color: #333; white-space: pre-wrap; text-align: center; min-width: 160px;
+            transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 120;
         }
+        #bubble.angry { border-color: red; background: #ffebee; color: #b71c1c; font-weight: bold; }
         #bubble::after {
             content: ''; position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%);
-            border-width: 10px 10px 0; border-style: solid; border-color: white transparent transparent;
+            border-width: 10px 10px 0; border-style: solid; border-color: inherit transparent transparent;
         }
 
-        /* --- 底部控制台 (Dock) --- */
+        /* --- 底部控制台 --- */
         .dock {
             position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
-            background: rgba(255,255,255,0.95);
-            padding: 10px 20px; border-radius: 50px;
-            display: flex; gap: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            z-index: 100;
+            background: rgba(255,255,255,0.95); padding: 10px 20px; border-radius: 50px;
+            display: flex; gap: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); z-index: 100;
         }
         .dock-btn {
-            width: 60px; height: 60px; border: none; border-radius: 50%;
-            font-size: 28px; cursor: pointer; transition: transform 0.2s, background 0.2s;
-            display: flex; justify-content: center; align-items: center;
-            background: #f0f4f8; position: relative;
+            width: 55px; height: 55px; border: none; border-radius: 50%; font-size: 26px;
+            cursor: pointer; background: #f0f4f8; position: relative; transition: 0.2s;
         }
         .dock-btn:active { transform: scale(0.9); }
-        .dock-btn.active { background: #ffe082; border: 2px solid #ffca28; animation: pulse 1s infinite; }
-        
-        /* 標籤 */
         .dock-btn::after {
-            content: attr(data-label);
-            position: absolute; bottom: -20px; font-size: 10px; color: #666; font-weight: bold; white-space: nowrap;
+            content: attr(data-label); position: absolute; bottom: -18px; left: 50%; transform: translateX(-50%);
+            font-size: 10px; color: #555; font-weight: bold; white-space: nowrap;
         }
 
-        @keyframes pulse { 0% {box-shadow: 0 0 0 0 rgba(255, 202, 40, 0.7);} 70% {box-shadow: 0 0 0 10px rgba(255, 202, 40, 0);} 100% {box-shadow: 0 0 0 0 rgba(255, 202, 40, 0);} }
+        /* --- 設定與上傳層 (黑色風格) --- */
+        #setup-layer {
+            position: fixed; inset: 0; background: #1a1a1a; z-index: 999;
+            display: flex; flex-direction: column; align-items: center; color: white;
+            padding: 20px; overflow-y: auto;
+        }
+        h1 { font-family: 'Share Tech Mono', monospace; color: #00d2ff; text-shadow: 0 0 10px #00d2ff; margin-bottom: 5px; }
+        
+        .box { background: #333; padding: 15px; border-radius: 10px; width: 100%; max-width: 320px; margin-bottom: 15px; border: 1px solid #444; }
+        .box h3 { margin: 0 0 10px 0; font-size: 14px; color: #aaa; text-transform: uppercase; border-bottom: 1px solid #555; padding-bottom: 5px; }
 
-        /* --- 互動元素 --- */
-        .poop {
-            position: absolute; font-size: 40px; cursor: pointer;
-            animation: bounceIn 0.5s; z-index: 5;
+        .btn {
+            width: 100%; padding: 12px; border: none; border-radius: 5px; margin-top: 5px;
+            font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px;
         }
-        .fly {
-            position: absolute; font-size: 20px; pointer-events: none;
-            animation: flyAround 2s infinite linear; z-index: 15;
-        }
-        .sponge {
-            position: absolute; font-size: 50px; pointer-events: none; z-index: 200; display: none;
-        }
-        .zzz {
-            position: absolute; font-size: 30px; color: white; font-weight: bold;
-            animation: floatZ 2s infinite; z-index: 20;
-        }
+        .btn-upload { background: #444; color: white; }
+        .btn-start { background: linear-gradient(45deg, #00d2ff, #007bff); color: white; font-size: 18px; margin-top: 20px; display: none; }
+        
+        .status-txt { font-size: 12px; color: #888; margin-top: 5px; text-align: center; }
+        .match-indicator { color: #ff3d00; font-weight: bold; display: none; animation: flash 1s infinite; margin-top:10px; text-align:center;}
+        @keyframes flash { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 
-        @keyframes bounceIn { from { transform: scale(0); } to { transform: scale(1); } }
-        @keyframes flyAround { 
-            0% { transform: translate(0,0) rotate(0deg); } 
-            25% { transform: translate(20px,-20px) rotate(90deg); }
-            50% { transform: translate(0,-40px) rotate(180deg); }
-            75% { transform: translate(-20px,-20px) rotate(270deg); }
-            100% { transform: translate(0,0) rotate(360deg); } 
-        }
-        @keyframes floatZ { 0% { opacity: 0; transform: translate(0,0) scale(0.5); } 50% { opacity: 1; } 100% { opacity: 0; transform: translate(20px,-50px) scale(1.5); } }
+        /* 預覽頭像 */
+        .preview-circle { width: 60px; height: 60px; border-radius: 50%; background: #000; overflow: hidden; margin: 0 auto; border: 2px solid #555; }
+        .preview-circle img { width: 100%; height: 100%; object-fit: cover; }
 
-        /* 上傳層 */
-        #upload-layer {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 999;
-            display: flex; flex-direction: column; justify-content: center; align-items: center; color: white;
-            text-align: center;
-        }
-        .btn-primary {
-            background: #00d2ff; border: none; padding: 15px 40px; font-size: 20px; border-radius: 50px; 
-            font-weight: bold; color: #000; cursor: pointer; margin-top: 20px;
-        }
+        input[type="text"] { width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #555; background: #222; color: white; box-sizing: border-box;}
+
+        /* Loader */
+        .loader { width: 20px; height: 20px; border: 3px solid #fff; border-bottom-color: transparent; border-radius: 50%; display: inline-block; animation: rotation 1s linear infinite; display:none;}
+        @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
     </style>
 </head>
 <body>
 
-    <div id="upload-layer">
-        <h1 style="color:#ffca28; font-size:3em; margin:0;">My AI Pet</h1>
-        <p style="color:#aaa; margin-bottom:30px;">湯姆貓風格養成遊戲</p>
-        
-        <div style="width:150px; height:150px; border:3px dashed #666; border-radius:20px; display:flex; justify-content:center; align-items:center; margin-bottom:20px; overflow:hidden;">
-             <img id="preview-mini" style="max-width:100%; max-height:100%; display:none;">
-             <span id="preview-text" style="color:#666;">預覽</span>
+    <div id="setup-layer">
+        <h1>AI IDENTITY 3.0</h1>
+        <p style="font-size:12px; color:#666; margin-bottom:20px;">BIO-METRIC SCANNING PROTOCOL</p>
+
+        <div class="box">
+            <h3>Step 1: Target Registration (Target)</h3>
+            <p style="font-size:11px; color:#888;">上傳你要偵測的「那個人」(老師) 的照片作為比對基準。</p>
+            <div class="preview-circle" id="target-preview"><img src="" style="display:none"></div>
+            <button class="btn btn-upload" onclick="document.getElementById('target-input').click()">
+                📂 上傳目標 (Reference)
+            </button>
+            <input type="file" id="target-input" accept="image/*" style="display:none">
+            <div id="target-status" class="status-txt">未設定 (預設為普通模式)</div>
         </div>
 
-        <button class="btn-primary" onclick="document.getElementById('file-input').click()">📁 選擇照片</button>
-        <input type="file" id="file-input" accept="image/*" style="display:none">
-        <p id="loading-txt" style="display:none; color:#00d2ff; margin-top:15px;">AI 正在施法去背中...</p>
-        <p style="font-size:12px; color:#555; margin-top:50px;">若去背失敗將自動使用原圖</p>
+        <div class="box">
+            <h3>Step 2: Player Upload</h3>
+            <div class="preview-circle" id="player-preview"><img src="" style="display:none"></div>
+            <button class="btn btn-upload" onclick="document.getElementById('player-input').click()">
+                📂 上傳遊玩照片
+            </button>
+            <input type="file" id="player-input" accept="image/*" style="display:none">
+            <div id="player-status" class="status-txt">等待上傳...</div>
+            
+            <div style="margin-top:10px;">
+                <label style="font-size:12px; color:#aaa;">玩家名字:</label>
+                <input type="text" id="player-name" value="同學" placeholder="輸入名字">
+            </div>
+        </div>
+
+        <div id="analysis-result" class="match-indicator">⚠ IDENTITY MATCHED: TEACHER DETECTED ⚠</div>
+
+        <button id="start-btn" class="btn btn-start" onclick="startGame()">
+            <span class="loader" id="start-loader"></span> 進入遊戲
+        </button>
+
+        <div id="model-status" style="position:fixed; bottom:10px; font-size:10px; color:#444;">Initialize AI Models...</div>
     </div>
 
-    <div id="room">
+    <div id="game-wrapper" class="scene-normal">
+        <div id="scan-line"></div>
+        
         <div class="top-ui">
-            <div class="stat-badge">
-                <div class="stat-icon">🍔</div>
-                <div class="progress-bar"><div id="bar-hunger" class="progress-fill" style="background:#ff9800; width:100%"></div></div>
+            <div class="status-row">
+                <div class="stat-badge">🍔 <div class="progress-bar"><div id="bar-hunger" class="progress-fill" style="background:#ff9800;"></div></div></div>
+                <div class="stat-badge">🚿 <div class="progress-bar"><div id="bar-clean" class="progress-fill" style="background:#03a9f4;"></div></div></div>
+                <div class="stat-badge">⚡ <div class="progress-bar"><div id="bar-energy" class="progress-fill" style="background:#ffeb3b;"></div></div></div>
+                <div class="stat-badge">😊 <div class="progress-bar"><div id="bar-fun" class="progress-fill" style="background:#e91e63;"></div></div></div>
             </div>
-            <div class="stat-badge">
-                <div class="stat-icon">🚿</div>
-                <div class="progress-bar"><div id="bar-clean" class="progress-fill" style="background:#03a9f4; width:100%"></div></div>
-            </div>
-            <div class="stat-badge">
-                <div class="stat-icon">⚡</div>
-                <div class="progress-bar"><div id="bar-energy" class="progress-fill" style="background:#ffeb3b; width:100%"></div></div>
-            </div>
-            <div class="stat-badge">
-                <div class="stat-icon">😊</div>
-                <div class="progress-bar"><div id="bar-fun" class="progress-fill" style="background:#e91e63; width:100%"></div></div>
-            </div>
+            <div id="mode-badge" style="background:rgba(0,0,0,0.5); color:white; font-size:10px; padding:2px 5px; border-radius:5px; align-self:center;">NORMAL MODE</div>
         </div>
-
-        <div class="floor"></div>
 
         <div id="pet-container">
-            <div id="bubble">你好啊！</div>
-            <img id="pet-img" src=""> <div id="dirt-overlay" class="status-layer"></div> <div id="sleep-layer" class="status-layer" style="display:none;"></div>
+            <div id="bubble"></div>
+            <img id="pet-img" src="">
         </div>
 
-        <div id="cursor-tool" class="sponge">🧽</div>
-
         <div class="dock">
-            <button class="dock-btn" onclick="actionFeed()" data-label="餵食">🍗</button>
-            <button class="dock-btn" id="btn-shower" onclick="toggleShower()" data-label="洗澡">🚿</button>
-            <button class="dock-btn" onclick="toggleSleep()" data-label="睡覺">💡</button>
-            <button class="dock-btn" onclick="actionPlay()" data-label="玩耍">🎾</button>
-            <a href="index.html" class="dock-btn" style="background:#eee; text-decoration:none;" data-label="離開">🚪</a>
+            <button class="dock-btn" onclick="actionFeed()" data-label="餵食">🍱</button>
+            <button class="dock-btn" onclick="actionClean()" data-label="清潔">🧹</button>
+            <button class="dock-btn" onclick="actionSleep()" data-label="睡覺">🔔</button>
+            <button class="dock-btn" onclick="actionPlay()" data-label="手機">📱</button>
         </div>
     </div>
 
     <script>
         // --- 核心變數 ---
         const state = {
-            hunger: 80,  // 飽食度
-            clean: 80,   // 潔淨度
-            energy: 80,  // 體力
-            fun: 80,     // 心情
+            hunger: 80, clean: 80, energy: 80, fun: 80,
             isSleeping: false,
-            isShowerMode: false
+            playerName: "同學",
+            isTeacher: false, // 是否觸發老師模式
+            targetDescriptor: null, // 目標的人臉數據
+            playerDescriptor: null  // 玩家的人臉數據
         };
 
         const els = {
-            petContainer: document.getElementById('pet-container'),
-            petImg: document.getElementById('pet-img'),
-            room: document.getElementById('room'),
+            wrapper: document.getElementById('game-wrapper'),
+            img: document.getElementById('pet-img'),
             bubble: document.getElementById('bubble'),
-            dirtOverlay: document.getElementById('dirt-overlay'),
-            tool: document.getElementById('cursor-tool'),
             bars: {
                 hunger: document.getElementById('bar-hunger'),
                 clean: document.getElementById('bar-clean'),
                 energy: document.getElementById('bar-energy'),
                 fun: document.getElementById('bar-fun')
-            }
+            },
+            modelStatus: document.getElementById('model-status'),
+            matchIndicator: document.getElementById('analysis-result')
         };
 
-        // --- 1. 啟動與去背邏輯 ---
-        document.getElementById('file-input').addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            document.getElementById('loading-txt').style.display = 'block';
-            const originalUrl = URL.createObjectURL(file);
-
-            // 預覽原圖
-            document.getElementById('preview-mini').src = originalUrl;
-            document.getElementById('preview-mini').style.display = 'block';
-
+        // --- 1. 初始化 AI 模型 ---
+        async function loadModels() {
+            els.modelStatus.innerText = "Loading Face AI Models...";
             try {
-                // 嘗試 AI 去背
-                const config = { publicPath: "https://cdn.jsdelivr.net/npm/@imgly/background-removal-data@1.3.0/dist/" };
-                const blob = await imglyRemoveBackground(file, config);
-                const url = URL.createObjectURL(blob);
-                els.petImg.src = url;
-            } catch (err) {
-                // 失敗用原圖 + 圓形裁切
-                console.log("去背失敗，使用原圖模式");
-                els.petImg.src = originalUrl;
-                els.petImg.style.borderRadius = "50%";
-                els.petImg.style.border = "5px solid white";
-                els.petImg.style.boxShadow = "0 10px 20px rgba(0,0,0,0.3)";
+                // 從 CDN 加載模型 (需要網路)
+                await faceapi.nets.ssdMobilenetv1.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models');
+                await faceapi.nets.faceLandmark68Net.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models');
+                await faceapi.nets.faceRecognitionNet.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models');
+                els.modelStatus.innerText = "AI Models Ready.";
+                console.log("Models Loaded");
+            } catch (e) {
+                els.modelStatus.innerText = "AI Load Failed (Check Network)";
+                console.error(e);
             }
+        }
+        loadModels();
 
-            els.petImg.onload = () => {
-                document.getElementById('upload-layer').style.display = 'none';
-                initGame();
-            };
+        // --- 2. 圖片處理與識別流程 ---
+
+        // A. 處理目標圖片 (Reference)
+        document.getElementById('target-input').addEventListener('change', async (e) => {
+            handleImageUpload(e.target.files[0], 'target');
         });
 
-        // --- 2. 遊戲主循環 ---
-        function initGame() {
-            // 每 2 秒扣數值
-            setInterval(gameLoop, 2000);
-            // 點擊寵物互動
-            els.petContainer.addEventListener('mousedown', handlePetInteraction);
-            els.petContainer.addEventListener('touchstart', handlePetInteraction);
-            // 隨機移動道具
-            document.addEventListener('mousemove', moveTool);
-            document.addEventListener('touchmove', moveToolTouch);
+        // B. 處理玩家圖片 (Play)
+        document.getElementById('player-input').addEventListener('change', async (e) => {
+            handleImageUpload(e.target.files[0], 'player');
+        });
+
+        async function handleImageUpload(file, type) {
+            if (!file) return;
+            const imgUrl = URL.createObjectURL(file);
             
-            talk("哇！新家好漂亮！");
+            // 顯示預覽
+            const previewEl = document.getElementById(type + '-preview').querySelector('img');
+            previewEl.src = imgUrl;
+            previewEl.style.display = 'block';
+            
+            const statusEl = document.getElementById(type + '-status');
+            statusEl.innerText = "Analyzing Face...";
+
+            // 1. 轉成 HTMLImageElement 供 AI 分析
+            const img = await faceapi.fetchImage(imgUrl);
+            
+            // 2. 偵測人臉並提取特徵 (Descriptor)
+            const detection = await faceapi.detectSingleFace(img).withFaceLandmarks().withFaceDescriptor();
+
+            if (detection) {
+                statusEl.innerText = "Face Detected ✅";
+                statusEl.style.color = "#4caf50";
+                
+                if (type === 'target') state.targetDescriptor = detection.descriptor;
+                if (type === 'player') {
+                    state.playerDescriptor = detection.descriptor;
+                    // 如果是玩家圖片，還要幫他去背
+                    processBackgroundRemoval(file); 
+                    // 執行比對
+                    compareFaces();
+                }
+            } else {
+                statusEl.innerText = "No Face Found ❌";
+                statusEl.style.color = "#ff5252";
+                if (type === 'player') processBackgroundRemoval(file); // 即使沒偵測到臉也讓他玩，只是不能識別
+            }
         }
 
+        async function processBackgroundRemoval(file) {
+            // 去背邏輯
+            document.getElementById('start-btn').style.display = 'none'; // 暫時隱藏開始按鈕
+            try {
+                const config = { publicPath: "https://cdn.jsdelivr.net/npm/@imgly/background-removal-data@1.3.0/dist/" };
+                const blob = await imglyRemoveBackground(file, config);
+                els.img.src = URL.createObjectURL(blob);
+            } catch (err) {
+                els.img.src = URL.createObjectURL(file); // 失敗用原圖
+            }
+            document.getElementById('start-btn').style.display = 'flex';
+        }
+
+        // --- 3. 核心比對邏輯 (Magic Happens Here) ---
+        function compareFaces() {
+            if (!state.targetDescriptor || !state.playerDescriptor) {
+                state.isTeacher = false;
+                return;
+            }
+
+            // 計算歐幾里得距離 (數值越小越像，通常 < 0.6 視為同一人)
+            const distance = faceapi.euclideanDistance(state.targetDescriptor, state.playerDescriptor);
+            console.log("Face Distance:", distance);
+
+            // 判斷閾值 (0.5 比較嚴格，0.6 比較寬鬆)
+            if (distance < 0.55) {
+                state.isTeacher = true;
+                els.matchIndicator.style.display = 'block';
+                els.matchIndicator.innerText = "⚠ 身份確認：目標人物 (MATCH) ⚠";
+            } else {
+                state.isTeacher = false;
+                els.matchIndicator.style.display = 'block';
+                els.matchIndicator.style.color = "#aaa";
+                els.matchIndicator.style.animation = "none";
+                els.matchIndicator.innerText = "身份確認：普通玩家 (NO MATCH)";
+            }
+        }
+
+        // --- 4. 遊戲開始 ---
+        function startGame() {
+            state.playerName = document.getElementById('player-name').value.trim() || "同學";
+            document.getElementById('setup-layer').style.display = 'none';
+
+            // 根據識別結果初始化場景
+            if (state.isTeacher) {
+                initTeacherMode();
+            } else {
+                initNormalMode();
+            }
+
+            // 啟動掃描動畫
+            const scan = document.getElementById('scan-line');
+            scan.style.animation = "scan 2s ease-in-out";
+
+            setInterval(gameLoop, 2000);
+        }
+
+        function initTeacherMode() {
+            els.wrapper.className = 'scene-teacher';
+            document.getElementById('mode-badge').innerText = "⚠ CLASSROOM MODE";
+            document.getElementById('mode-badge').style.background = "#b71c1c";
+            
+            // 隨機開場
+            const intros = [
+                "Class is starting.", 
+                "Put your electronic devices away.", 
+                `I see you, ${state.playerName}.`
+            ];
+            talk(intros[Math.floor(Math.random()*intros.length)]);
+        }
+
+        function initNormalMode() {
+            els.wrapper.className = 'scene-normal';
+            document.getElementById('mode-badge').innerText = "NORMAL MODE";
+            talk(`嗨 ${state.playerName}！一起玩吧！`);
+        }
+
+        // --- 5. 遊戲循環與動作 ---
         function gameLoop() {
             if (state.isSleeping) {
-                // 睡覺時：回體力，但會餓
                 state.energy = Math.min(100, state.energy + 5);
                 state.hunger = Math.max(0, state.hunger - 1);
-                spawnZzz();
             } else {
-                // 清醒時：扣數值
                 state.hunger = Math.max(0, state.hunger - 2);
                 state.clean = Math.max(0, state.clean - 1.5);
                 state.energy = Math.max(0, state.energy - 1);
                 state.fun = Math.max(0, state.fun - 2);
             }
+            
+            // 老師模式的隨機事件
+            if(state.isTeacher && Math.random() < 0.1 && !state.isSleeping) {
+                const phrases = [
+                    "Folks.", 
+                    "Ladies...", 
+                    `I need to see ${state.playerName} after class.`,
+                    "Is that gum?"
+                ];
+                talk(phrases[Math.floor(Math.random() * phrases.length)]);
+            }
 
-            // 狀態檢查
-            updateVisuals();
-            checkEvents();
             updateUI();
         }
 
@@ -314,203 +388,74 @@
             els.bars.fun.style.width = state.fun + '%';
         }
 
-        function updateVisuals() {
-            // 1. 髒污遮罩
-            const dirtOpacity = (100 - state.clean) / 100;
-            els.dirtOverlay.style.opacity = state.clean < 60 ? dirtOpacity : 0;
+        // --- 互動功能 (根據身分變化) ---
 
-            // 2. 濾鏡
-            if (state.isSleeping) {
-                els.petImg.style.filter = "brightness(0.7) grayscale(0.3)";
-            } else if (state.energy < 20) {
-                els.petImg.style.filter = "grayscale(0.8) blur(1px)"; // 累了
-            } else {
-                els.petImg.style.filter = "none";
-            }
-        }
-
-        function checkEvents() {
-            // 隨機大便 (當乾淨度低時)
-            if (state.clean < 50 && Math.random() < 0.1 && !state.isSleeping) {
-                spawnPoop();
-            }
-            // 蒼蠅 (非常髒時)
-            if (state.clean < 30 && document.querySelectorAll('.fly').length < 3) {
-                spawnFly();
-            }
-            // 抱怨
-            if (Math.random() < 0.05 && !state.isSleeping) {
-                if (state.hunger < 20) talk("我好餓喔...");
-                else if (state.clean < 20) talk("身上好癢！");
-                else if (state.energy < 20) talk("我想睡覺了 zZZ");
-            }
-        }
-
-        // --- 3. 動作系統 ---
-
-        // 動作 A: 餵食
         function actionFeed() {
-            if(state.isSleeping) { talk("睡覺中不能吃東西啦"); return; }
-            if(state.hunger >= 95) { talk("太飽了，吃不下！"); return; }
-
-            createFloatingItem('🍔', els.petContainer.offsetLeft, els.petContainer.offsetTop - 100);
-            state.hunger = Math.min(100, state.hunger + 20);
-            state.energy = Math.min(100, state.energy + 5); // 吃飽有點力氣
-            animPet('scale(1.1)', 200);
-            talk("好吃！");
-            updateUI();
-        }
-
-        // 動作 B: 洗澡 (模式切換)
-        function toggleShower() {
-            if(state.isSleeping) { talk("醒來再洗！"); return; }
-            
-            state.isShowerMode = !state.isShowerMode;
-            const btn = document.getElementById('btn-shower');
-            
-            if (state.isShowerMode) {
-                btn.classList.add('active');
-                els.tool.style.display = 'block';
-                talk("來洗香香囉～(在身上摩擦)");
+            if (state.isTeacher) {
+                talk("No eating in my class.");
+                animPet('translateX(5px)'); // 搖頭拒絕
             } else {
-                btn.classList.remove('active');
-                els.tool.style.display = 'none';
+                talk("好香喔～謝謝！");
+                state.hunger = Math.min(100, state.hunger + 20);
+                animPet('scale(1.1)');
             }
         }
 
-        // 動作 C: 睡覺
-        function toggleSleep() {
+        function actionClean() {
+            if (state.isTeacher) {
+                talk("Line up properly.");
+                state.clean += 10;
+            } else {
+                talk("洗澡澡～");
+                state.clean = Math.min(100, state.clean + 20);
+            }
+        }
+
+        function actionPlay() {
+            // 關鍵功能：手機
+            if (state.isTeacher) {
+                talk("Put your electronic devices in your backpack!", true); // true = angry
+                state.fun -= 10; // 心情變差
+                animPet('scale(1.2)'); // 突然變大(生氣)
+            } else {
+                talk("耶！玩遊戲！");
+                state.fun = Math.min(100, state.fun + 20);
+                animPet('translateY(-20px)');
+            }
+        }
+
+        function actionSleep() {
             state.isSleeping = !state.isSleeping;
             if (state.isSleeping) {
-                els.room.classList.add('dark');
-                talk("晚安...");
-            } else {
-                els.room.classList.remove('dark');
-                talk("早安！太陽曬屁股了");
-            }
-        }
-
-        // 動作 D: 玩耍
-        function actionPlay() {
-            if(state.isSleeping) { talk("呼...呼..."); return; }
-            if(state.energy < 20) { talk("我太累了，不想動"); return; }
-
-            state.fun = Math.min(100, state.fun + 15);
-            state.energy -= 10; // 玩耍耗體力
-            
-            // 簡單特效：跳躍
-            els.petImg.style.transform = "translateY(-50px) rotate(10deg)";
-            setTimeout(() => els.petImg.style.transform = "none", 300);
-            
-            createFloatingItem('🎵', els.petContainer.offsetLeft + 50, els.petContainer.offsetTop);
-            createFloatingItem('❤️', els.petContainer.offsetLeft - 50, els.petContainer.offsetTop);
-            talk("好玩！");
-            updateUI();
-        }
-
-        // --- 4. 互動邏輯 ---
-
-        function handlePetInteraction(e) {
-            // 如果是洗澡模式
-            if (state.isShowerMode) {
-                // 搓澡效果
-                state.clean = Math.min(100, state.clean + 5);
-                createFloatingItem('🫧', e.clientX || e.touches[0].clientX, e.clientY || e.touches[0].clientY);
-                if(state.clean >= 100) {
-                    talk("洗得超乾淨！亮晶晶✨");
-                    toggleShower(); // 自動結束
+                els.wrapper.classList.add('dark-mode');
+                if(state.isTeacher) {
+                    talk("Class dismiss.");
+                } else {
+                    talk("晚安...");
                 }
-                updateUI();
-                updateVisuals();
-                
-                // 清除蒼蠅
-                const flies = document.querySelectorAll('.fly');
-                flies.forEach(f => f.remove());
             } else {
-                // 普通摸摸
-                state.fun = Math.min(100, state.fun + 5);
-                talk("好舒服～");
-                createFloatingItem('❤️', e.clientX || e.touches[0].clientX, e.clientY || e.touches[0].clientY);
-                updateUI();
+                els.wrapper.classList.remove('dark-mode');
+                talk(state.isTeacher ? "Morning folks." : "早安！");
             }
         }
 
-        // 工具跟隨
-        function moveTool(e) {
-            if(!state.isShowerMode) return;
-            els.tool.style.left = e.clientX + 'px';
-            els.tool.style.top = e.clientY + 'px';
-        }
-        function moveToolTouch(e) {
-            if(!state.isShowerMode) return;
-            e.preventDefault();
-            els.tool.style.left = e.touches[0].clientX + 'px';
-            els.tool.style.top = e.touches[0].clientY + 'px';
-            
-            // 檢測觸摸碰撞
-            const rect = els.petContainer.getBoundingClientRect();
-            const tx = e.touches[0].clientX;
-            const ty = e.touches[0].clientY;
-            
-            if (tx > rect.left && tx < rect.right && ty > rect.top && ty < rect.bottom) {
-                handlePetInteraction(e); // 觸發洗澡
-            }
-        }
-
-        // --- 5. 物件生成系統 ---
-
-        function spawnPoop() {
-            const poop = document.createElement('div');
-            poop.className = 'poop';
-            poop.innerText = '💩';
-            // 隨機位置在地板上
-            poop.style.left = (Math.random() * 80 + 10) + 'vw';
-            poop.style.bottom = (Math.random() * 10 + 5) + '%';
-            
-            poop.onclick = () => {
-                poop.innerText = '✨';
-                setTimeout(() => poop.remove(), 500);
-                talk("謝謝鏟屎官！");
-                state.clean += 10;
-                updateUI();
-            };
-            els.room.appendChild(poop);
-            talk("哎呀...忍不住了");
-        }
-
-        function spawnFly() {
-            const fly = document.createElement('div');
-            fly.className = 'fly';
-            fly.innerText = '🪰';
-            fly.style.left = els.petContainer.offsetLeft + 'px';
-            fly.style.top = els.petContainer.offsetTop + 'px';
-            els.room.appendChild(fly);
-        }
-
-        function spawnZzz() {
-            const z = document.createElement('div');
-            z.className = 'zzz';
-            z.innerText = 'Z';
-            z.style.left = (els.petContainer.offsetLeft + 50) + 'px';
-            z.style.top = (els.petContainer.offsetTop - 50) + 'px';
-            els.room.appendChild(z);
-            setTimeout(() => z.remove(), 2000);
-        }
-
-        // --- 6. 輔助函式 ---
-
-        function talk(text) {
+        function talk(text, isAngry = false) {
             els.bubble.innerText = text;
+            els.bubble.className = isAngry ? 'angry' : '';
             els.bubble.style.transform = "translateX(-50%) scale(1)";
             
-            // 簡單的語音合成 (TTS)
-            if ('speechSynthesis' in window && !state.isSleeping) {
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = 'zh-TW';
-                utterance.rate = 1.2; // 講快一點比較可愛
-                utterance.pitch = 1.5; // 音調高一點像寵物
-                window.speechSynthesis.cancel(); // 停止上一句
-                window.speechSynthesis.speak(utterance);
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const u = new SpeechSynthesisUtterance(text);
+                // 老師模式講英文，普通模式講中文
+                u.lang = /[a-zA-Z]/.test(text) ? 'en-US' : 'zh-HK';
+                if(state.isTeacher) {
+                    u.pitch = 0.8; // 老師聲音低沉一點
+                    u.rate = 1.1;
+                } else {
+                    u.pitch = 1.2; // 寵物聲音高一點
+                }
+                window.speechSynthesis.speak(u);
             }
 
             setTimeout(() => {
@@ -518,30 +463,10 @@
             }, 3000);
         }
 
-        function createFloatingItem(emoji, x, y) {
-            const el = document.createElement('div');
-            el.innerText = emoji;
-            el.style.position = 'fixed';
-            el.style.left = x + 'px';
-            el.style.top = y + 'px';
-            el.style.fontSize = '30px';
-            el.style.pointerEvents = 'none';
-            el.style.transition = 'all 1s';
-            el.style.zIndex = 200;
-            document.body.appendChild(el);
-            
-            setTimeout(() => {
-                el.style.top = (y - 100) + 'px';
-                el.style.opacity = 0;
-            }, 50);
-            setTimeout(() => el.remove(), 1000);
-        }
-
-        
-        function animPet(transformStr, duration) {
-            const original = els.petImg.style.transform;
-            els.petImg.style.transform = transformStr;
-            setTimeout(() => els.petImg.style.transform = original, duration);
+        function animPet(trans) {
+            const original = els.img.style.transform;
+            els.img.style.transform = trans;
+            setTimeout(() => els.img.style.transform = original, 300);
         }
 
     </script>
