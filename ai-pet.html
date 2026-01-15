@@ -3,173 +3,235 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>My AI Pet 4.0 - Auto Memory</title>
+    <title>JENNIFER PROTOCOL - Manual Control</title>
     <script src="https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.3.0/dist/imgly-background-removal.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+    
     <style>
-        /* --- 基礎 UI --- */
-        body { margin: 0; background: #111; font-family: 'Fredoka', sans-serif; overflow: hidden; user-select: none; }
+        :root {
+            --neon-blue: #00f3ff;
+            --neon-red: #ff0055;
+            --glass-bg: rgba(20, 20, 30, 0.8);
+            --border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        body {
+            margin: 0; background: #050505; color: white;
+            font-family: 'Rajdhani', 'Noto Sans TC', sans-serif;
+            overflow: hidden; user-select: none;
+            background-image: radial-gradient(circle at 50% 50%, #1a1a2e 0%, #000000 100%);
+        }
+
+        /* --- 設定層 UI --- */
+        #setup-layer {
+            position: fixed; inset: 0; z-index: 999;
+            display: flex; flex-direction: column; align-items: center;
+            padding: 20px; overflow-y: auto;
+            background: url('https://img.freepik.com/free-vector/dark-hexagonal-background-with-gradient-color_79603-1409.jpg') center/cover;
+            transition: 0.5s;
+        }
+        /* 當開啟 Jennifer 模式時，設定背景變紅 */
+        #setup-layer.mode-active {
+            background-image: linear-gradient(rgba(50,0,0,0.8), rgba(50,0,0,0.8)), url('https://img.freepik.com/free-vector/dark-hexagonal-background-with-gradient-color_79603-1409.jpg');
+        }
+
+        .glass-panel {
+            background: var(--glass-bg); backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color); border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+            width: 100%; max-width: 320px; padding: 25px; margin-bottom: 20px;
+            text-align: center;
+        }
+
+        h1 { color: var(--neon-blue); text-shadow: 0 0 15px var(--neon-blue); margin-bottom: 5px; letter-spacing: 2px; }
+        p { color: #888; font-size: 12px; margin-bottom: 20px; letter-spacing: 1px; }
+
+        /* 頭像預覽 */
+        .avatar-preview {
+            width: 120px; height: 120px; border-radius: 50%;
+            background: #111; margin: 0 auto 20px;
+            border: 3px solid #333; overflow: hidden; position: relative;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .avatar-preview img { width: 100%; height: 100%; object-fit: cover; }
+        .avatar-preview.processing::after {
+            content: ''; position: absolute; inset: 0;
+            background: rgba(0,0,0,0.5);
+            border: 2px dashed white; border-radius: 50%;
+            animation: spin 2s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* 上傳按鈕 */
+        .btn-upload {
+            background: #333; color: white; border: 1px solid #555;
+            padding: 10px 20px; border-radius: 30px; cursor: pointer;
+            font-size: 14px; font-weight: bold; transition: 0.2s;
+            display: inline-flex; align-items: center; gap: 8px;
+        }
+        .btn-upload:hover { background: #444; border-color: #888; }
+
+        /* --- 核心開關 (Jennifer Mode Switch) --- */
+        .mode-switch-container {
+            margin-top: 30px;
+            padding: 15px; border-radius: 15px;
+            background: rgba(0,0,0,0.3); border: 1px solid #333;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .switch-label { text-align: left; }
+        .switch-title { font-size: 14px; font-weight: bold; color: white; display: block;}
+        .switch-desc { font-size: 10px; color: #777; }
+        
+        /* Toggle CSS */
+        .toggle-checkbox { display: none; }
+        .toggle-slot {
+            position: relative; height: 26px; width: 50px;
+            border: 2px solid #444; border-radius: 20px; background: #111;
+            transition: 0.3s; cursor: pointer;
+        }
+        .toggle-button {
+            position: absolute; top: 3px; left: 3px;
+            width: 20px; height: 20px; border-radius: 50%; background: #666;
+            transition: 0.3s; box-shadow: 0 0 5px rgba(0,0,0,0.5);
+        }
+        /* 啟動狀態 */
+        .toggle-checkbox:checked + .toggle-slot { background: #3a0000; border-color: var(--neon-red); }
+        .toggle-checkbox:checked + .toggle-slot .toggle-button {
+            background: var(--neon-red); transform: translateX(24px);
+            box-shadow: 0 0 10px var(--neon-red);
+        }
+
+        /* 開始按鈕 */
+        .btn-start {
+            width: 100%; padding: 15px; margin-top: 20px;
+            background: linear-gradient(45deg, #007bff, #00c6ff);
+            border: none; border-radius: 50px; color: white;
+            font-size: 18px; font-weight: bold; letter-spacing: 2px;
+            cursor: pointer; box-shadow: 0 0 20px rgba(0, 123, 255, 0.4);
+            transition: 0.3s;
+        }
+        .btn-start:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(1); }
+
+        /* Jennifer 模式下的按鈕樣式 */
+        .btn-start.danger-mode {
+            background: linear-gradient(45deg, #b71c1c, #ff0055);
+            box-shadow: 0 0 20px rgba(255, 0, 85, 0.5);
+        }
+
+        /* --- 遊戲畫面 --- */
         #game-wrapper {
             position: relative; width: 100vw; height: 100vh;
-            transition: background 0.5s; overflow: hidden;
             background-size: cover; background-position: center;
+            transition: 1s;
         }
-        /* 普通模式 */
-        .scene-normal { background: radial-gradient(circle, #fff9c4, #ffecb3); }
-        /* 老師模式 */
+        
+        .scene-normal { background: linear-gradient(180deg, #89f7fe 0%, #66a6ff 100%); }
         .scene-teacher { 
-            background: linear-gradient(180deg, #2c1e1a 0%, #4a332a 100%); 
-            box-shadow: inset 0 0 100px rgba(0,0,0,0.9);
-        }
-        .scene-teacher::before {
-            content: "NO PHONES ALLOWED";
-            position: absolute; top: 10%; width: 100%; text-align: center;
-            color: rgba(255,0,0,0.15); font-family: 'Share Tech Mono', monospace; font-size: 40px; pointer-events: none;
+            background: linear-gradient(180deg, #2b0505 0%, #4a0e0e 100%);
+            box-shadow: inset 0 0 100px black;
         }
 
-        .dark-mode { filter: brightness(0.2); }
+        /* 警告浮水印 */
+        #warning-overlay {
+            position: absolute; inset: 0; pointer-events: none;
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; transition: 0.5s;
+            background: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,0,0,0.05) 10px, rgba(255,0,0,0.05) 20px);
+        }
+        .scene-teacher #warning-overlay { opacity: 1; }
+        .warning-text {
+            font-size: 40px; font-weight: 800; color: rgba(255, 0, 0, 0.15);
+            border: 8px solid rgba(255,0,0,0.15); padding: 20px 40px;
+            transform: rotate(-15deg); letter-spacing: 5px;
+        }
 
-        /* --- 頂部狀態 --- */
-        .top-ui { position: absolute; top: 10px; left: 10px; right: 10px; z-index: 100; display: flex; flex-direction: column; gap: 5px; }
-        .status-row { display: flex; gap: 5px; justify-content: center; }
-        .stat-badge { background: rgba(255,255,255,0.9); padding: 5px 8px; border-radius: 15px; width: 55px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-        .progress-bar { width: 100%; height: 5px; background: #ddd; border-radius: 3px; margin-top: 3px; overflow: hidden; }
-        .progress-fill { height: 100%; width: 100%; transition: width 0.5s; }
-        #mode-badge { align-self: center; font-size: 10px; padding: 4px 8px; border-radius: 10px; color: white; background: rgba(0,0,0,0.5); font-weight: bold; }
-
-        /* --- 寵物本體 --- */
+        /* 狀態與按鈕 */
+        .top-ui { position: absolute; top: 20px; width: 100%; display: flex; justify-content: center; gap: 10px; z-index: 10; }
+        .stat-pill { background: rgba(255,255,255,0.8); padding: 5px 12px; border-radius: 20px; font-weight: bold; font-size: 14px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        
         #pet-container {
-            position: absolute; left: 50%; top: 60%; width: 220px; height: 220px;
-            transform: translate(-50%, -50%); z-index: 10;
-            display: flex; justify-content: center; align-items: center;
+            position: absolute; top: 55%; left: 50%; transform: translate(-50%, -50%);
+            width: 280px; height: 280px; z-index: 5;
         }
-        #pet-img { width: 100%; height: 100%; object-fit: contain; transition: transform 0.2s; pointer-events: none; }
+        #pet-img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 10px 10px rgba(0,0,0,0.2)); transition: 0.3s; }
 
         #bubble {
-            position: absolute; top: -100px; left: 50%; transform: translateX(-50%) scale(0);
-            background: white; padding: 15px 20px; border-radius: 20px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3); border: 2px solid #333;
-            font-size: 16px; color: #333; white-space: pre-wrap; text-align: center; min-width: 160px;
-            transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 120;
-        }
-        #bubble.angry { border-color: red; background: #ffebee; color: #b71c1c; font-weight: bold; }
-        #bubble::after {
-            content: ''; position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%);
-            border-width: 10px 10px 0; border-style: solid; border-color: inherit transparent transparent;
+            position: absolute; top: -80px; left: 50%; transform: translateX(-50%) scale(0);
+            background: white; padding: 15px 25px; border-radius: 20px 20px 20px 0;
+            font-weight: bold; color: #333; min-width: 100px; text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2); transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
-        /* --- 底部控制台 --- */
         .dock {
-            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
-            background: rgba(255,255,255,0.95); padding: 10px 20px; border-radius: 50px;
-            display: flex; gap: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); z-index: 100;
+            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+            background: rgba(255,255,255,0.25); backdrop-filter: blur(10px);
+            padding: 10px 20px; border-radius: 50px; display: flex; gap: 15px;
+            border: 1px solid rgba(255,255,255,0.3); z-index: 20; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
         .dock-btn {
-            width: 55px; height: 55px; border: none; border-radius: 50%; font-size: 26px;
-            cursor: pointer; background: #f0f4f8; position: relative; transition: 0.2s;
+            width: 55px; height: 55px; border-radius: 50%; border: none; font-size: 26px;
+            cursor: pointer; background: white; transition: 0.2s; box-shadow: 0 5px 10px rgba(0,0,0,0.1);
         }
         .dock-btn:active { transform: scale(0.9); }
-        .dock-btn::after {
-            content: attr(data-label); position: absolute; bottom: -18px; left: 50%; transform: translateX(-50%);
-            font-size: 10px; color: #555; font-weight: bold; white-space: nowrap;
-        }
 
-        /* --- 設定層 --- */
-        #setup-layer {
-            position: fixed; inset: 0; background: #1a1a1a; z-index: 999;
-            display: flex; flex-direction: column; align-items: center; color: white;
-            padding: 20px; overflow-y: auto;
-        }
-        h1 { font-family: 'Share Tech Mono', monospace; color: #00d2ff; text-shadow: 0 0 10px #00d2ff; margin-bottom: 5px; }
-        
-        .box { background: #2a2a2a; padding: 15px; border-radius: 10px; width: 100%; max-width: 320px; margin-bottom: 15px; border: 1px solid #444; }
-        .box h3 { margin: 0 0 10px 0; font-size: 14px; color: #aaa; text-transform: uppercase; border-bottom: 1px solid #555; padding-bottom: 5px; }
-
-        .btn {
-            width: 100%; padding: 12px; border: none; border-radius: 5px; margin-top: 5px;
-            font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px;
-        }
-        .btn-upload { background: #444; color: white; }
-        .btn-start { background: linear-gradient(45deg, #00d2ff, #007bff); color: white; font-size: 18px; margin-top: 20px; display: none; }
-        
-        .status-txt { font-size: 12px; color: #888; margin-top: 5px; text-align: center; }
-        .match-indicator { color: #ff3d00; font-weight: bold; display: none; margin-top:10px; text-align:center; padding: 10px; border: 1px dashed #ff3d00; background: rgba(255, 61, 0, 0.1); border-radius: 5px;}
-
-        /* 手動開關 */
-        .manual-check { margin-top: 15px; display: flex; align-items: center; gap: 10px; padding: 10px; background: #333; border-radius: 5px; }
-        .manual-check input { width: 20px; height: 20px; accent-color: #ff3d00; }
-        .manual-check label { font-size: 13px; color: #ddd; }
-
-        .preview-circle { width: 60px; height: 60px; border-radius: 50%; background: #000; overflow: hidden; margin: 0 auto; border: 2px solid #555; display: flex; align-items: center; justify-content: center; color: #555; font-size: 20px;}
-        .preview-circle img { width: 100%; height: 100%; object-fit: cover; }
-        input[type="text"] { width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #555; background: #222; color: white; box-sizing: border-box;}
-        
-        #scan-line { position: absolute; top: 0; left: 0; width: 100%; height: 5px; background: #00ff00; box-shadow: 0 0 10px #00ff00; opacity: 0; pointer-events: none; z-index: 50; }
-        @keyframes scan { 0% { top: 0%; opacity: 1; } 50% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
+        /* Loader */
+        .loading-text { font-size: 12px; color: #00f3ff; margin-top: 10px; display:none; }
 
     </style>
 </head>
 <body>
 
     <div id="setup-layer">
-        <h1>AI PET 4.0</h1>
-        <p style="font-size:12px; color:#666; margin-bottom:20px;">MEMORY CORE ACTIVATED</p>
+        <h1>MANUAL CONTROL</h1>
+        <p>UPLOAD & SELECT IDENTITY PROTOCOL</p>
 
-        <div class="box">
-            <h3>Step 1: Teacher Reference</h3>
-            <div style="display: flex; align-items: center; gap: 15px;">
-                <div class="preview-circle" id="target-preview">?</div>
-                <div style="flex:1;">
-                    <div id="target-status" class="status-txt" style="text-align:left;">Checking Memory...</div>
-                    <button class="btn btn-upload" style="font-size:12px; padding:8px;" onclick="document.getElementById('target-input').click()">
-                        🔄 更新老師照片
-                    </button>
-                    <button class="btn" style="font-size:10px; padding:5px; background: #b71c1c; color:white; margin-top:5px;" onclick="clearMemory()">
-                        🗑 清除記憶
-                    </button>
-                </div>
+        <div class="glass-panel">
+            <div class="avatar-preview" id="preview-box">
+                <img id="preview-img" style="display:none">
+                <span id="placeholder-icon" style="font-size:40px; color:#555;">📷</span>
             </div>
-            <input type="file" id="target-input" accept="image/*" style="display:none">
-        </div>
-
-        <div class="box">
-            <h3>Step 2: Play Now</h3>
-            <div class="preview-circle" id="player-preview"><img src="" style="display:none"></div>
-            <button class="btn btn-upload" onclick="document.getElementById('player-input').click()">
-                📂 上傳遊玩照片
-            </button>
-            <input type="file" id="player-input" accept="image/*" style="display:none">
             
-            <div class="manual-check">
-                <input type="checkbox" id="force-teacher">
-                <label for="force-teacher">AI 偵測不到？強制開啟老師模式 (Force Teacher Mode)</label>
+            <button class="btn-upload" onclick="document.getElementById('file-input').click()">
+                📂 上傳照片 (Remove BG)
+            </button>
+            <input type="file" id="file-input" accept="image/*" style="display:none">
+            
+            <div id="loading-txt" class="loading-text">REMOVING BACKGROUND...</div>
+
+            <div style="margin-top:20px;">
+                <input type="text" id="player-name" placeholder="輸入名字..." 
+                       style="width:80%; padding:10px; border-radius:5px; border:1px solid #555; background:#222; color:white; text-align:center;">
             </div>
 
-            <div style="margin-top:10px;">
-                <input type="text" id="player-name" value="同學" placeholder="輸入名字">
+            <div class="mode-switch-container">
+                <div class="switch-label">
+                    <span class="switch-title" id="mode-title-text">普通模式</span>
+                    <span class="switch-desc">Normal Student</span>
+                </div>
+                <label>
+                    <input type="checkbox" id="jennifer-toggle" class="toggle-checkbox" onchange="toggleModeUI()">
+                    <div class="toggle-slot">
+                        <div class="toggle-button"></div>
+                    </div>
+                </label>
             </div>
         </div>
 
-        <div id="analysis-result" class="match-indicator">⚠ TEACHER DETECTED ⚠</div>
-
-        <button id="start-btn" class="btn btn-start" onclick="startGame()">
-            🚀 進入遊戲
+        <button id="start-btn" class="btn-start" onclick="startGame()" disabled>
+            ENTER SYSTEM
         </button>
-
-        <div id="model-status" style="position:fixed; bottom:10px; font-size:10px; color:#444;">Initializing Neural Net...</div>
     </div>
 
     <div id="game-wrapper" class="scene-normal">
-        <div id="scan-line"></div>
+        <div id="warning-overlay">
+            <div class="warning-text">NO PHONES ALLOWED</div>
+        </div>
+
         <div class="top-ui">
-            <div class="status-row">
-                <div class="stat-badge">🍔 <div class="progress-bar"><div id="bar-hunger" class="progress-fill" style="background:#ff9800;"></div></div></div>
-                <div class="stat-badge">🚿 <div class="progress-bar"><div id="bar-clean" class="progress-fill" style="background:#03a9f4;"></div></div></div>
-                <div class="stat-badge">⚡ <div class="progress-bar"><div id="bar-energy" class="progress-fill" style="background:#ffeb3b;"></div></div></div>
-                <div class="stat-badge">😊 <div class="progress-bar"><div id="bar-fun" class="progress-fill" style="background:#e91e63;"></div></div></div>
-            </div>
-            <div id="mode-badge">NORMAL MODE</div>
+            <div class="stat-pill" style="color:#ff9f43">🍖 <span id="val-hunger">80</span></div>
+            <div class="stat-pill" style="color:#48dbfb">🚿 <span id="val-clean">80</span></div>
+            <div class="stat-pill" style="color:#ff6b6b">😊 <span id="val-fun">80</span></div>
         </div>
 
         <div id="pet-container">
@@ -178,299 +240,200 @@
         </div>
 
         <div class="dock">
-            <button class="dock-btn" onclick="actionFeed()" data-label="餵食">🍱</button>
-            <button class="dock-btn" onclick="actionClean()" data-label="清潔">🧹</button>
-            <button class="dock-btn" onclick="actionSleep()" data-label="睡覺">🔔</button>
-            <button class="dock-btn" onclick="actionPlay()" data-label="手機">📱</button>
+            <button class="dock-btn" onclick="act('feed')">🍱</button>
+            <button class="dock-btn" onclick="act('clean')">🧹</button>
+            <button class="dock-btn" onclick="act('sleep')">💤</button>
+            <button class="dock-btn" onclick="act('phone')" style="background:#ffeaa7">📱</button>
         </div>
     </div>
 
     <script>
         const state = {
-            hunger: 80, clean: 80, energy: 80, fun: 80,
-            isSleeping: false,
-            playerName: "同學",
-            isTeacher: false,
-            targetDescriptor: null, // 存放老師特徵
-            playerDescriptor: null
+            hunger: 80, clean: 80, fun: 80,
+            isJennifer: false, // 核心變數：是否為老師模式
+            isSleeping: false
         };
 
-        const els = {
-            wrapper: document.getElementById('game-wrapper'),
-            img: document.getElementById('pet-img'),
-            bubble: document.getElementById('bubble'),
-            bars: {
-                hunger: document.getElementById('bar-hunger'),
-                clean: document.getElementById('bar-clean'),
-                energy: document.getElementById('bar-energy'),
-                fun: document.getElementById('bar-fun')
-            },
-            modelStatus: document.getElementById('model-status'),
-            matchIndicator: document.getElementById('analysis-result'),
-            targetStatus: document.getElementById('target-status'),
-            targetPreview: document.getElementById('target-preview')
-        };
-
-        // --- 1. AI 模型載入 ---
-        async function loadModels() {
-            try {
-                // 使用更輕量的模型 TinyFaceDetector 以提高偵測率
-                await faceapi.nets.tinyFaceDetector.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models');
-                await faceapi.nets.faceLandmark68Net.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models');
-                await faceapi.nets.faceRecognitionNet.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models');
-                await faceapi.nets.ssdMobilenetv1.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models');
-                
-                els.modelStatus.innerText = "AI System Ready.";
-                console.log("Models Loaded");
-                
-                // 模型載入後，檢查有沒有記憶的老師
-                checkMemory();
-            } catch (e) {
-                els.modelStatus.innerText = "Model Load Error (Check Network)";
-            }
-        }
-        loadModels();
-
-        // --- 2. 記憶功能 (LocalStorage) ---
-        function checkMemory() {
-            const savedData = localStorage.getItem('teacherDescriptor');
-            if (savedData) {
-                // 將字串轉回 Float32Array 供 face-api 使用
-                state.targetDescriptor = new Float32Array(Object.values(JSON.parse(savedData)));
-                els.targetStatus.innerText = "✅ 老師特徵已讀取 (Auto-Loaded)";
-                els.targetStatus.style.color = "#4caf50";
-                els.targetPreview.innerText = "M"; // Memory
-                els.targetPreview.style.background = "#2e7d32";
-                els.targetPreview.style.color = "white";
-            } else {
-                els.targetStatus.innerText = "❌ 無紀錄，請上傳 (Empty)";
-            }
-        }
-
-        function clearMemory() {
-            localStorage.removeItem('teacherDescriptor');
-            state.targetDescriptor = null;
-            els.targetStatus.innerText = "🗑 記憶已清除";
-            els.targetPreview.innerText = "?";
-            els.targetPreview.style.background = "#000";
-        }
-
-        // --- 3. 圖片處理 ---
+        // --- 1. 介面邏輯 ---
         
-        // 上傳老師照片 (只為了提取特徵並存檔)
-        document.getElementById('target-input').addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            
-            els.targetStatus.innerText = "Analyzing Target...";
-            const imgUrl = URL.createObjectURL(file);
-            const img = await faceapi.fetchImage(imgUrl);
-            
-            // 使用 SSD 模型 (較精準) 提取特徵
-            const detection = await faceapi.detectSingleFace(img).withFaceLandmarks().withFaceDescriptor();
+        // 切換開關時的 UI 變化
+        function toggleModeUI() {
+            const isChecked = document.getElementById('jennifer-toggle').checked;
+            const title = document.getElementById('mode-title-text');
+            const bg = document.getElementById('setup-layer');
+            const btn = document.getElementById('start-btn');
+            const desc = document.querySelector('.switch-desc');
 
-            if (detection) {
-                state.targetDescriptor = detection.descriptor;
-                // 存入瀏覽器記憶體
-                localStorage.setItem('teacherDescriptor', JSON.stringify(detection.descriptor));
-                
-                els.targetStatus.innerText = "✅ 特徵已儲存 (Saved!)";
-                els.targetStatus.style.color = "#4caf50";
-                els.targetPreview.innerHTML = `<img src="${imgUrl}">`; // 暫時顯示
+            if (isChecked) {
+                // Jennifer 模式
+                title.innerText = "⚠ JENNIFER MODE";
+                title.style.color = "#ff0055";
+                desc.innerText = "Teacher / Angry / Strict";
+                bg.classList.add('mode-active');
+                btn.classList.add('danger-mode');
+                btn.innerText = "⚠ ACTIVATE PROTOCOL";
             } else {
-                els.targetStatus.innerText = "❌ 偵測不到臉 (Try Another)";
-                els.targetStatus.style.color = "#ff5252";
-            }
-        });
-
-        // 上傳玩家照片 (遊玩用)
-        document.getElementById('player-input').addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            // 1. 顯示預覽
-            const imgUrl = URL.createObjectURL(file);
-            const previewEl = document.getElementById('player-preview').querySelector('img');
-            previewEl.src = imgUrl;
-            previewEl.style.display = 'block';
-
-            // 2. 進行去背 (同時進行 AI 識別)
-            document.getElementById('start-btn').style.display = 'none';
-            els.matchIndicator.style.display = 'none';
-            
-            // 並行處理：識別 + 去背
-            Promise.all([
-                detectPlayerFace(imgUrl),
-                removeBackground(file)
-            ]).then(() => {
-                document.getElementById('start-btn').style.display = 'flex';
-            });
-        });
-
-        async function detectPlayerFace(imgUrl) {
-            const img = await faceapi.fetchImage(imgUrl);
-            // 降低偵測門檻 (ScoreThreshold 0.3) 讓它更容易抓到臉
-            const detection = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.3 }))
-                                    .withFaceLandmarks().withFaceDescriptor();
-
-            if (detection) {
-                state.playerDescriptor = detection.descriptor;
-                compareFaces();
-            } else {
-                console.log("No face detected on player image");
-                // 如果偵測不到，就不進行比對，保留預設 (或看強制開關)
+                // 普通模式
+                title.innerText = "普通模式";
+                title.style.color = "white";
+                desc.innerText = "Normal Student";
+                bg.classList.remove('mode-active');
+                btn.classList.remove('danger-mode');
+                btn.innerText = "ENTER SYSTEM";
             }
         }
 
-        async function removeBackground(file) {
+        // 圖片上傳與自動去背
+        document.getElementById('file-input').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            // UI 更新
+            const previewBox = document.getElementById('preview-box');
+            const loadingTxt = document.getElementById('loading-txt');
+            const startBtn = document.getElementById('start-btn');
+            
+            previewBox.classList.add('processing');
+            loadingTxt.style.display = 'block';
+            startBtn.disabled = true;
+
             try {
+                // 1. 先顯示原圖 (以防去背太久)
+                const tempUrl = URL.createObjectURL(file);
+                document.getElementById('preview-img').src = tempUrl;
+                document.getElementById('preview-img').style.display = 'block';
+                document.getElementById('placeholder-icon').style.display = 'none';
+
+                // 2. 執行去背
                 const config = { publicPath: "https://cdn.jsdelivr.net/npm/@imgly/background-removal-data@1.3.0/dist/" };
                 const blob = await imglyRemoveBackground(file, config);
-                els.img.src = URL.createObjectURL(blob);
+                const finalUrl = URL.createObjectURL(blob);
+                
+                // 3. 完成
+                document.getElementById('preview-img').src = finalUrl; // 更新預覽
+                document.getElementById('pet-img').src = finalUrl;     // 更新遊戲內圖片
+                
             } catch (err) {
-                els.img.src = URL.createObjectURL(file);
+                console.error("BG Removal failed, using original", err);
+                document.getElementById('pet-img').src = URL.createObjectURL(file);
             }
-        }
 
-        function compareFaces() {
-            if (!state.targetDescriptor || !state.playerDescriptor) return;
+            previewBox.classList.remove('processing');
+            loadingTxt.style.display = 'none';
+            startBtn.disabled = false;
+        });
 
-            const distance = faceapi.euclideanDistance(state.targetDescriptor, state.playerDescriptor);
-            console.log("Distance:", distance);
-
-            // 0.6 是標準，0.55 較嚴格。若覺得還是不準，可調回 0.6
-            if (distance < 0.55) {
-                els.matchIndicator.style.display = 'block';
-                els.matchIndicator.innerText = "⚠ 身份確認：TEACHER DETECTED ⚠";
-                // 自動勾選強制開關，給視覺回饋
-                document.getElementById('force-teacher').checked = true;
-            } else {
-                els.matchIndicator.style.display = 'block';
-                els.matchIndicator.innerText = "身份確認：普通玩家";
-                els.matchIndicator.style.color = "#aaa";
-                els.matchIndicator.style.borderColor = "#555";
-                document.getElementById('force-teacher').checked = false;
-            }
-        }
-
-        // --- 4. 遊戲邏輯 ---
+        // --- 2. 遊戲開始 ---
         function startGame() {
-            state.playerName = document.getElementById('player-name').value.trim() || "同學";
-            
-            // 判定模式：優先看「強制開關」，其次看 AI 結果
-            const forceMode = document.getElementById('force-teacher').checked;
-            
-            state.isTeacher = forceMode; // 只要勾選，就是老師
+            const name = document.getElementById('player-name').value || "同學";
+            state.isJennifer = document.getElementById('jennifer-toggle').checked;
 
             document.getElementById('setup-layer').style.display = 'none';
             
-            if (state.isTeacher) initTeacherMode();
-            else initNormalMode();
-
-            // 掃描特效
-            const scan = document.getElementById('scan-line');
-            scan.style.animation = "scan 2s ease-in-out";
+            if (state.isJennifer) {
+                document.getElementById('game-wrapper').className = "scene-teacher";
+                talk(`I see you, ${name}.`, true);
+            } else {
+                document.getElementById('game-wrapper').className = "scene-normal";
+                talk(`嗨 ${name}！一起玩吧！`);
+            }
 
             setInterval(gameLoop, 2000);
         }
 
-        function initTeacherMode() {
-            els.wrapper.className = 'scene-teacher';
-            document.getElementById('mode-badge').innerText = "⚠ CLASSROOM MODE";
-            document.getElementById('mode-badge').style.background = "#b71c1c";
-            talk(`I see you, ${state.playerName}.`);
-        }
-
-        function initNormalMode() {
-            els.wrapper.className = 'scene-normal';
-            document.getElementById('mode-badge').innerText = "NORMAL MODE";
-            document.getElementById('mode-badge').style.background = "#4caf50";
-            talk(`嗨 ${state.playerName}！一起玩吧！`);
-        }
-
+        // --- 3. 遊戲循環 ---
         function gameLoop() {
-            if (state.isSleeping) {
-                state.energy = Math.min(100, state.energy + 5);
-                state.hunger = Math.max(0, state.hunger - 1);
-            } else {
-                state.hunger = Math.max(0, state.hunger - 2);
-                state.clean = Math.max(0, state.clean - 1.5);
-                state.energy = Math.max(0, state.energy - 1);
-                state.fun = Math.max(0, state.fun - 2);
-            }
-            
-            // 老師隨機插話
-            if(state.isTeacher && Math.random() < 0.15 && !state.isSleeping) {
-                const phrases = ["Focus.", "Pay attention.", "Is that homework?"];
-                talk(phrases[Math.floor(Math.random() * phrases.length)]);
-            }
-            updateUI();
-        }
+            if (state.isSleeping) return;
 
-        function updateUI() {
-            els.bars.hunger.style.width = state.hunger + '%';
-            els.bars.clean.style.width = state.clean + '%';
-            els.bars.energy.style.width = state.energy + '%';
-            els.bars.fun.style.width = state.fun + '%';
-        }
+            state.hunger = Math.max(0, state.hunger - 2);
+            state.clean = Math.max(0, state.clean - 1);
+            state.fun = Math.max(0, state.fun - 2);
 
-        // --- 互動 ---
-        function actionPlay() {
-            if (state.isTeacher) {
-                talk("Give me your phone. NOW.", true);
-                state.fun -= 20;
-                animPet('scale(1.3)'); // 暴怒
-            } else {
-                talk("耶！打傳說！");
-                state.fun = Math.min(100, state.fun + 20);
-                animPet('translateY(-20px)');
+            // 更新數值 UI
+            document.getElementById('val-hunger').innerText = state.hunger;
+            document.getElementById('val-clean').innerText = state.clean;
+            document.getElementById('val-fun').innerText = state.fun;
+
+            // Jennifer 隨機碎念
+            if (state.isJennifer && Math.random() < 0.1) {
+                const lines = ["Eyes front.", "Is that gum?", "Pay attention."];
+                talk(lines[Math.floor(Math.random() * lines.length)], true);
             }
         }
 
-        function actionFeed() {
-            if (state.isTeacher) {
-                talk("No eating in class.");
-                animPet('translateX(5px)');
-            } else {
-                talk("Yummy!");
-                state.hunger = Math.min(100, state.hunger + 20);
-                animPet('scale(1.1)');
+        // --- 4. 互動邏輯 ---
+        function act(type) {
+            if (type === 'phone') {
+                if (state.isJennifer) {
+                    // Jennifer 模式下玩手機：暴怒
+                    talk("GIVE ME YOUR PHONE! NOW!", true);
+                    state.fun -= 20;
+                    // 震動特效
+                    const img = document.getElementById('pet-img');
+                    img.style.transform = "translate(-50%, -50%) scale(1.3) rotate(5deg)";
+                    setTimeout(() => img.style.transform = "translate(-50%, -50%) scale(1)", 300);
+                } else {
+                    talk("耶！打遊戲！");
+                    state.fun = Math.min(100, state.fun + 15);
+                }
+            } 
+            else if (type === 'feed') {
+                if(state.isJennifer) talk("No eating in class.", true);
+                else { talk("好吃！"); state.hunger += 20; }
             }
-        }
-        function actionClean() {
-             if (state.isTeacher) { talk("Clean up your desk."); state.clean+=10; }
-             else { talk("洗香香～"); state.clean = Math.min(100, state.clean+20); }
-        }
-        function actionSleep() {
-            state.isSleeping = !state.isSleeping;
-            if(state.isSleeping) {
-                els.wrapper.classList.add('dark-mode');
-                talk(state.isTeacher ? "Class dismissed." : "晚安 zzz");
-            } else {
-                els.wrapper.classList.remove('dark-mode');
-                talk(state.isTeacher ? "Wake up." : "早安！");
+            else if (type === 'clean') {
+                if(state.isJennifer) talk("Detention.");
+                else { talk("洗香香～"); state.clean += 20; }
             }
+            else if (type === 'sleep') {
+                state.isSleeping = !state.isSleeping;
+                const wrapper = document.getElementById('game-wrapper');
+                if(state.isSleeping) {
+                    wrapper.style.filter = "brightness(0.2)";
+                    talk(state.isJennifer ? "Class dismissed." : "晚安 zzz");
+                } else {
+                    wrapper.style.filter = "brightness(1)";
+                    talk("早安！");
+                }
+            }
+            // 每次操作後刷新數值
+            document.getElementById('val-hunger').innerText = state.hunger;
+            document.getElementById('val-clean').innerText = state.clean;
+            document.getElementById('val-fun').innerText = state.fun;
         }
 
+        // --- 5. 對話系統 ---
         function talk(text, isAngry = false) {
-            els.bubble.innerText = text;
-            els.bubble.className = isAngry ? 'angry' : '';
-            els.bubble.style.transform = "translateX(-50%) scale(1)";
+            const b = document.getElementById('bubble');
+            b.innerText = text;
+            b.style.transform = "translateX(-50%) scale(1)";
             
+            // 樣式
+            if (isAngry) {
+                b.style.border = "2px solid red";
+                b.style.color = "#d60000";
+                b.style.background = "#fff0f0";
+            } else {
+                b.style.border = "none";
+                b.style.color = "#333";
+                b.style.background = "white";
+            }
+
+            // 語音合成
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
                 const u = new SpeechSynthesisUtterance(text);
-                u.lang = /[a-zA-Z]/.test(text) ? 'en-US' : 'zh-HK';
-                if(state.isTeacher) { u.pitch = 0.7; u.rate = 1.2; } 
-                else { u.pitch = 1.2; }
+                if (state.isJennifer) {
+                    u.lang = 'en-US'; u.pitch = 0.7; u.rate = 1.2; // 老師語氣
+                } else {
+                    u.lang = 'zh-HK'; u.pitch = 1.2; // 學生語氣
+                }
                 window.speechSynthesis.speak(u);
             }
-            setTimeout(() => { els.bubble.style.transform = "translateX(-50%) scale(0)"; }, 3000);
-        }
-        function animPet(trans) {
-            const original = els.img.style.transform;
-            els.img.style.transform = trans;
-            setTimeout(() => els.img.style.transform = original, 300);
+
+            setTimeout(() => {
+                b.style.transform = "translateX(-50%) scale(0)";
+            }, 2500);
         }
     </script>
 </body>
