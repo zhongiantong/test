@@ -3,445 +3,313 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>JENNIFER PROTOCOL v7.0 - AUDIO ENHANCED</title>
+    <title>JENNIFER CLASSROOM v10.0</title>
     <script src="https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.3.0/dist/imgly-background-removal.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Noto+Sans+TC:wght@400;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     
     <style>
-        :root {
-            --primary: #00f3ff;
-            --danger: #ff003c;
-            --bg-dark: #050505;
+        :root { --primary: #00f3ff; --danger: #ff003c; --bg: #111; }
+        body { margin: 0; background: #000; overflow: hidden; font-family: 'Roboto', sans-serif; user-select: none; touch-action: none; }
+
+        /* 場景 */
+        #stage {
+            position: fixed; inset: 0; background-size: cover; background-position: center; transition: 0.3s;
+            background-image: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://img.freepik.com/free-photo/empty-classroom-interior-with-wooden-desks_107791-1522.jpg');
         }
 
-        body {
-            margin: 0; background: var(--bg-dark); color: white;
-            font-family: 'Noto Sans TC', sans-serif;
-            overflow: hidden; user-select: none;
-            touch-action: manipulation;
+        /* 角色 (物理核心) */
+        #pet {
+            position: absolute; width: 280px; height: 280px;
+            left: 50%; top: 50%; transform: translate(-50%, -50%);
+            touch-action: none; cursor: grab; z-index: 10;
         }
-
-        /* --- 動畫特效 --- */
-        @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-15px); } }
-        @keyframes shake { 0% { transform: translate(1px, 1px) rotate(0deg); } 10% { transform: translate(-1px, -2px) rotate(-1deg); } 30% { transform: translate(3px, 2px) rotate(0deg); } 50% { transform: translate(-1px, 2px) rotate(-1deg); } 70% { transform: translate(3px, 1px) rotate(-1deg); } 100% { transform: translate(1px, -2px) rotate(-1deg); } }
-        @keyframes red-flash { 0% { box-shadow: inset 0 0 0 transparent; } 50% { box-shadow: inset 0 0 100px var(--danger); } 100% { box-shadow: inset 0 0 0 transparent; } }
-        @keyframes particle-up { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(-100px) scale(1.5); opacity: 0; } }
-
-        /* --- 設定層 --- */
-        #setup-layer {
-            position: fixed; inset: 0; z-index: 999;
-            background: linear-gradient(135deg, #111, #222);
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            transition: 0.5s;
-        }
-        #setup-layer.jennifer-bg { background: linear-gradient(135deg, #2b0505, #000); }
-
-        .title { font-family: 'Black Ops One', cursive; font-size: 40px; color: var(--primary); text-shadow: 0 0 20px var(--primary); margin-bottom: 20px; text-align: center; }
-        .subtitle { color: #888; font-size: 12px; letter-spacing: 2px; margin-top: -15px; margin-bottom: 30px; }
-
-        .upload-box {
-            width: 150px; height: 150px; border-radius: 50%;
-            border: 2px dashed #555; display: flex; align-items: center; justify-content: center;
-            overflow: hidden; background: #000; position: relative;
-            box-shadow: 0 0 30px rgba(0,0,0,0.5); transition: 0.3s;
-        }
-        .upload-box img { width: 100%; height: 100%; object-fit: cover; }
-        .upload-box.done { border: 2px solid var(--primary); box-shadow: 0 0 20px var(--primary); }
-
-        /* --- 開關設計 --- */
-        .toggle-wrapper {
-            margin: 30px 0; background: rgba(255,255,255,0.1); padding: 10px 20px;
-            border-radius: 50px; display: flex; align-items: center; gap: 15px; border: 1px solid #444;
-        }
-        .switch { position: relative; display: inline-block; width: 60px; height: 34px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
-        .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background-color: var(--danger); }
-        input:checked + .slider:before { transform: translateX(26px); }
-
-        .btn-start {
-            background: var(--primary); color: black; font-weight: 900;
-            padding: 15px 40px; border-radius: 50px; border: none; font-size: 20px;
-            cursor: pointer; text-transform: uppercase; box-shadow: 0 0 20px rgba(0, 243, 255, 0.4);
-            transition: 0.2s; opacity: 0.5; pointer-events: none;
-        }
-        .btn-start.ready { opacity: 1; pointer-events: all; }
-        .btn-start:active { transform: scale(0.95); }
-
-        /* --- 遊戲主畫面 --- */
-        #game-stage {
-            position: fixed; inset: 0; background-size: cover; background-position: center;
-            transition: filter 0.5s; overflow: hidden;
-        }
-        .bg-normal { background: linear-gradient(to bottom, #a18cd1 0%, #fbc2eb 100%); }
-        .bg-jennifer { background: linear-gradient(to bottom, #200122, #6f0000); box-shadow: inset 0 0 200px rgba(0,0,0,0.9); }
-        
-        .shake-screen { animation: shake 0.5s; }
-        .flash-screen { animation: red-flash 0.5s; }
-
-        #pet-wrapper {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 300px; height: 300px; cursor: pointer;
-            animation: float 3s ease-in-out infinite; z-index: 10;
-        }
-        /* 強制圓形剪裁 */
-        #pet-img { 
-            width: 100%; height: 100%; object-fit: cover; 
-            border-radius: 50%;
-            border: 5px solid rgba(255,255,255,0.2);
-            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.5));
+        #pet:active { cursor: grabbing; }
+        #pet img {
+            width: 100%; height: 100%; object-fit: cover; border-radius: 50%;
+            border: 6px solid rgba(255,255,255,0.2); pointer-events: none;
+            filter: drop-shadow(0 15px 30px rgba(0,0,0,0.6));
             transition: transform 0.1s;
         }
-        #pet-wrapper:active #pet-img { transform: scale(0.95); }
 
+        /* 氣泡 */
         #bubble {
             position: absolute; top: -100px; left: 50%; transform: translateX(-50%) scale(0);
-            background: white; color: #333; padding: 15px 25px; border-radius: 20px;
-            font-size: 16px; font-weight: bold; white-space: nowrap; box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-            transition: 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: none;
+            background: #fff; border: 3px solid var(--danger); color: var(--danger);
+            padding: 15px 25px; border-radius: 30px; font-size: 18px;
+            font-weight: 900; white-space: nowrap; pointer-events: none;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 20;
+            transition: 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        #bubble:after { content:''; position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%); border: 10px solid transparent; border-top-color: white; }
+        #bubble::after { content:''; position: absolute; bottom:-12px; left:50%; transform:translateX(-50%); border:12px solid transparent; border-top-color:var(--danger); }
+
+        /* UI 層 */
+        #info-panel {
+            position: absolute; top: 20px; left: 20px; color: white;
+            font-family: 'Black Ops One'; letter-spacing: 1px;
+            text-shadow: 0 2px 5px black; z-index: 5;
+        }
+
+        /* 設定層 UI */
+        #setup {
+            position: fixed; inset: 0; background: #0a0a0a; z-index: 999;
+            display: flex; flex-direction: column; align-items: center; padding: 20px;
+            overflow-y: auto; background-image: radial-gradient(#222 10%, transparent 10%);
+            background-size: 20px 20px;
+        }
+        .card { background: #1a1a1a; padding: 20px; border-radius: 15px; width: 100%; max-width: 340px; margin-bottom: 20px; border: 1px solid #333; }
         
-        .hud { position: absolute; top: 20px; left: 20px; right: 20px; display: flex; gap: 10px; justify-content: center; }
-        .bar-box { background: rgba(0,0,0,0.5); border-radius: 10px; padding: 5px 10px; display: flex; align-items: center; gap: 5px; color: white; font-size: 12px; backdrop-filter: blur(5px); }
-        .bar { width: 50px; height: 6px; background: #555; border-radius: 3px; overflow: hidden; }
-        .fill { height: 100%; width: 100%; transition: width 0.3s; }
+        h2 { color: var(--danger); margin: 0 0 15px 0; font-family: 'Black Ops One'; text-align: center; font-size: 24px; }
+        label { color: #888; font-size: 12px; display: block; margin-bottom: 5px; font-weight: bold; }
 
-        .controls {
-            position: absolute; bottom: 30px; width: 100%;
-            display: flex; justify-content: center; gap: 20px;
+        input[type="text"], textarea {
+            width: 100%; background: #000; border: 1px solid #444; color: white;
+            padding: 12px; border-radius: 8px; box-sizing: border-box; font-size: 16px; margin-bottom: 10px;
+            font-family: 'Roboto', sans-serif;
         }
-        .c-btn {
-            width: 60px; height: 60px; border-radius: 50%; border: none;
-            font-size: 28px; background: rgba(255,255,255,0.9); cursor: pointer;
-            box-shadow: 0 5px 0 #ccc, 0 10px 20px rgba(0,0,0,0.3);
-            transition: 0.1s; position: relative;
-        }
-        .c-btn:active { transform: translateY(5px); box-shadow: 0 0 0 #ccc; }
+        input:focus, textarea:focus { border-color: var(--danger); outline: none; }
+        textarea { height: 120px; font-size: 14px; line-height: 1.4; color: #ccc; }
 
-        .particle { position: absolute; font-size: 24px; pointer-events: none; animation: particle-up 1s forwards; z-index: 100; }
-        #loader-txt { font-size: 12px; color: var(--primary); margin-top: 10px; display: none; }
+        .btn-start {
+            width: 100%; max-width: 340px; padding: 18px; background: var(--danger); color: white;
+            border: none; border-radius: 50px; font-weight: 900; font-size: 20px; letter-spacing: 1px;
+            box-shadow: 0 0 30px rgba(255, 0, 60, 0.4); cursor: pointer; transition: 0.2s;
+        }
+        .btn-start:active { transform: scale(0.95); }
+
+        /* 上傳 */
+        .preview-box { width: 120px; height: 120px; border-radius: 50%; background: #000; overflow: hidden; margin: 0 auto 10px; border: 2px dashed #444; position: relative;}
+        .preview-box img { width: 100%; height: 100%; object-fit: cover; }
+        .loading-text { position: absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:10px; color:var(--primary); display:none; text-align: center; width: 100%;}
+
     </style>
 </head>
 <body>
 
-    <div id="setup-layer">
-        <div class="title">AI PET v7.0</div>
-        <div class="subtitle">AUDIO ENHANCED SYSTEM</div>
-
-        <div class="upload-box" id="u-box" onclick="document.getElementById('file-in').click()">
-            <img id="u-preview" style="display:none">
-            <span id="u-icon" style="font-size:40px; color:#555">📷</span>
-        </div>
-        <div id="loader-txt">REMOVING BACKGROUND (AI)...</div>
-        <input type="file" id="file-in" accept="image/*" style="display:none">
-
-        <div class="toggle-wrapper">
-            <div style="text-align:right">
-                <div style="font-weight:bold; font-size:14px;">JENNIFER MODE</div>
-                <div style="font-size:10px; color:#aaa;">(Strict English)</div>
+    <div id="setup">
+        <div class="card">
+            <h2>TEACHER JENNIFER</h2>
+            
+            <div class="preview-box" onclick="document.getElementById('file').click()">
+                <img id="prev-img" style="display:none">
+                <span id="cam-icon" style="line-height:120px; font-size:40px; color:#333; display:block; text-align:center;">📷</span>
+                <div id="load-txt" class="loading-text">REMOVING BG...</div>
             </div>
-            <label class="switch">
-                <input type="checkbox" id="mode-toggle" onchange="updateTheme()">
-                <span class="slider"></span>
-            </label>
+            <input type="file" id="file" hidden accept="image/*">
+            
+            <label>YOUR NAME (學生姓名)</label>
+            <input type="text" id="p-name" placeholder="Enter your name" value="Tom">
         </div>
 
-        <button id="start-btn" class="btn-start" onclick="initGame()">START</button>
+        <div class="card">
+            <label>CATCHPHRASES (已預設 Jennifer 語錄)</label>
+            <textarea id="custom-text">Put your electronic devices in your backpack,
+Folks,
+Ladies,
+Class dismiss,
+Line up with (玩家名),
+I need to see (玩家名) after class</textarea>
+            <div style="font-size:10px; color:#555; margin-top:5px;">* (玩家名) will be replaced by your name.</div>
+        </div>
+
+        <button class="btn-start" onclick="startGame()">ENTER CLASS</button>
     </div>
 
-    <div id="game-stage" class="bg-normal">
-        <div class="hud">
-            <div class="bar-box">🍖 <div class="bar"><div id="b-hunger" class="fill" style="background:#ff9f43"></div></div></div>
-            <div class="bar-box">🚿 <div class="bar"><div id="b-clean" class="fill" style="background:#48dbfb"></div></div></div>
-            <div class="bar-box">😊 <div class="bar"><div id="b-fun" class="fill" style="background:#ff6b6b"></div></div></div>
+    <div id="stage">
+        <div id="info-panel">
+            <div style="font-size:14px; color:#888">STUDENT:</div>
+            <div id="disp-name" style="font-size:24px; color:var(--primary)">PLAYER</div>
+            <div style="margin-top:5px; font-size:12px; color:#ff5555">CONDUCT: POOR</div>
         </div>
 
-        <div id="pet-wrapper" onclick="interactPet(event)">
+        <div id="pet">
             <div id="bubble"></div>
             <img id="pet-img">
-        </div>
-
-        <div class="controls">
-            <button class="c-btn" onclick="action('eat')">🍔</button>
-            <button class="c-btn" onclick="action('clean')">🧼</button>
-            <button class="c-btn" onclick="action('sleep')">💤</button>
-            <button class="c-btn" onclick="action('phone')">📱</button>
         </div>
     </div>
 
     <script>
-        // --- 全新音效合成器 (Cyber Audio Synth) ---
-        // 不需要下載任何 MP3，程式碼直接產生音波
+        // --- 變數 ---
+        let phrases = [];
+        let vx = 0, vy = 0; 
+        let x = window.innerWidth / 2, y = window.innerHeight / 2;
+        let isDragging = false;
+        let lastX, lastY;
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let playerName = "Student";
 
-        function playSound(type) {
-            if (audioCtx.state === 'suspended') audioCtx.resume();
+        // --- 1. 圖片處理 ---
+        document.getElementById('file').addEventListener('change', async (e) => {
+            const f = e.target.files[0];
+            if(!f) return;
             
-            const osc = audioCtx.createOscillator();
-            const gainNode = audioCtx.createGain();
-            osc.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
+            const prev = document.getElementById('prev-img');
+            const icon = document.getElementById('cam-icon');
+            const load = document.getElementById('load-txt');
 
-            const now = audioCtx.currentTime;
-
-            if (type === 'happy') {
-                // 叮叮聲 (高頻正弦波)
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(600, now);
-                osc.frequency.exponentialRampToValueAtTime(1200, now + 0.1);
-                gainNode.gain.setValueAtTime(0.3, now);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
-                osc.start(now);
-                osc.stop(now + 0.5);
-            } 
-            else if (type === 'angry') {
-                // 錯誤蜂鳴聲 (低頻鋸齒波)
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(150, now);
-                osc.frequency.linearRampToValueAtTime(100, now + 0.3);
-                gainNode.gain.setValueAtTime(0.3, now);
-                gainNode.gain.linearRampToValueAtTime(0.01, now + 0.3);
-                osc.start(now);
-                osc.stop(now + 0.3);
-            }
-            else if (type === 'ui') {
-                // 按鈕點擊聲 (短促波)
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(800, now);
-                gainNode.gain.setValueAtTime(0.1, now);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-                osc.start(now);
-                osc.stop(now + 0.1);
-            }
-        }
-
-        // --- 語錄資料庫 (Strict English for Jennifer) ---
-        const QUOTES = {
-            normal: {
-                touch: ["嘻嘻！", "好痕呀～", "Hi~", "你是最好的！", "❤️"],
-                eat: ["Yummy!", "好味！", "多謝款待！", "飽飽～"],
-                clean: ["香噴噴！", "爽呀～", "乾淨曬！"],
-                phone: ["一齊打機！", "加我好友！", "看看IG~", "自拍一張！"],
-                sleep: ["晚安 zzz", "發個好夢", "不要嘈我"]
-            },
-            jennifer: {
-                // 純英文，嚴格語氣
-                touch: ["Don't touch me.", "Personal space!", "How dare you?", "Sit down.", "Excuse me?"],
-                eat: ["No eating in the lab.", "Put that away.", "Is that gum?", "Disgusting."],
-                clean: ["Fix your uniform.", "Tidy up.", "You look messy.", "Present yourself properly."],
-                phone: ["GIVE ME YOUR PHONE!", "Confiscated.", "Detention!", "Who allowed that?", "Unbelievable."],
-                sleep: ["WAKE UP!", "Eyes on me!", "No sleeping!", "Are you bored?", "Pay attention."]
-            }
-        };
-
-        const state = {
-            isJennifer: false,
-            hunger: 80, clean: 80, fun: 80,
-            isSleeping: false
-        };
-
-        function updateTheme() {
-            playSound('ui');
-            state.isJennifer = document.getElementById('mode-toggle').checked;
-            const layer = document.getElementById('setup-layer');
-            if(state.isJennifer) {
-                layer.classList.add('jennifer-bg');
-                document.querySelector('.title').style.color = "#ff003c";
-                document.querySelector('.title').style.textShadow = "0 0 20px red";
-            } else {
-                layer.classList.remove('jennifer-bg');
-                document.querySelector('.title').style.color = "#00f3ff";
-                document.querySelector('.title').style.textShadow = "0 0 20px cyan";
-            }
-        }
-
-        document.getElementById('file-in').addEventListener('change', async (e) => {
-            playSound('ui');
-            const file = e.target.files[0];
-            if(!file) return;
-
-            document.getElementById('u-icon').style.display = 'none';
-            document.getElementById('loader-txt').style.display = 'block';
-            document.getElementById('u-preview').style.display = 'block';
-            document.getElementById('u-preview').src = URL.createObjectURL(file);
+            icon.style.display = 'none';
+            load.style.display = 'block';
+            prev.style.display = 'block';
+            prev.src = URL.createObjectURL(f); 
             
             try {
-                const blob = await imglyRemoveBackground(file, {
-                    publicPath: "https://cdn.jsdelivr.net/npm/@imgly/background-removal-data@1.3.0/dist/"
-                });
+                const blob = await imglyRemoveBackground(f, { publicPath: "https://cdn.jsdelivr.net/npm/@imgly/background-removal-data@1.3.0/dist/" });
                 const url = URL.createObjectURL(blob);
-                document.getElementById('u-preview').src = url;
+                prev.src = url;
                 document.getElementById('pet-img').src = url;
-            } catch(err) {
-                const url = URL.createObjectURL(file);
-                document.getElementById('pet-img').src = url;
+            } catch(e) {
+                document.getElementById('pet-img').src = URL.createObjectURL(f);
             }
-
-            document.getElementById('loader-txt').style.display = 'none';
-            document.getElementById('u-box').classList.add('done');
-            document.getElementById('start-btn').classList.add('ready');
-            playSound('happy'); // 成功音效
+            load.style.display = 'none';
         });
 
-        function initGame() {
-            playSound('ui');
-            document.getElementById('setup-layer').style.display = 'none';
-            const stage = document.getElementById('game-stage');
+        // --- 2. 遊戲初始化 ---
+        function startGame() {
+            playerName = document.getElementById('p-name').value || "You";
+            document.getElementById('disp-name').innerText = playerName.toUpperCase();
+
+            // 處理語錄替換
+            const raw = document.getElementById('custom-text').value;
+            // 將 (玩家名) 替換成輸入的名字
+            phrases = raw.split(/,|\n/).map(s => {
+                let clean = s.trim();
+                return clean.replace(/\(玩家名\)/g, playerName);
+            }).filter(s => s);
+
+            if(phrases.length === 0) phrases = ["Silence.", "Sit down."];
+
+            document.getElementById('setup').style.display = 'none';
+            if(audioCtx.state === 'suspended') audioCtx.resume();
             
-            if(state.isJennifer) {
-                stage.className = "bg-jennifer";
-                speak("Class is in session. Silence.");
-            } else {
-                stage.className = "bg-normal";
-                speak("Hello! 一齊玩啦！");
-            }
-            setInterval(loop, 2000);
+            // 開場白
+            speak("All eyes on me.");
+            
+            physicsLoop();
         }
 
-        function interactPet(e) {
-            if(state.isSleeping) return;
+        // --- 3. 物理引擎 (Throw & Drag) ---
+        const pet = document.getElementById('pet');
+        const petImg = document.querySelector('#pet img');
 
-            const rect = e.target.getBoundingClientRect();
-            const x = e.clientX;
-            const y = e.clientY;
+        pet.addEventListener('mousedown', start);
+        pet.addEventListener('touchstart', start, {passive: false});
+        window.addEventListener('mousemove', move);
+        window.addEventListener('touchmove', move, {passive: false});
+        window.addEventListener('mouseup', end);
+        window.addEventListener('touchend', end);
 
-            if(state.isJennifer) {
-                // 生氣邏輯
-                playSound('angry'); // 播放生氣音效
-                speakRandom('touch');
-                screenEffect('shake');
-                spawnParticle(x, y, ['💢', '⚡', '🚫', '⚠️']);
-                state.fun -= 5;
-            } else {
-                // 開心邏輯
-                playSound('happy'); // 播放開心音效
-                speakRandom('touch');
-                spawnParticle(x, y, ['❤️', '✨', '🌸', '😍']);
-                state.fun = Math.min(100, state.fun + 5);
-            }
-            updateUI();
+        function start(e) {
+            e.preventDefault();
+            isDragging = true;
+            vx = 0; vy = 0;
+            pet.style.cursor = 'grabbing';
+            petImg.style.transform = 'scale(1.1)'; // 抓起放大
+            
+            const cx = e.touches ? e.touches[0].clientX : e.clientX;
+            const cy = e.touches ? e.touches[0].clientY : e.clientY;
+            lastX = cx; lastY = cy;
+            
+            // 抓起音效
+            playSound(300, 'triangle');
+            speak("What are you doing?");
         }
 
-        function action(type) {
-            playSound('ui'); // 按鈕聲
-            if(type === 'sleep') { toggleSleep(); return; }
-            if(state.isSleeping) return;
+        function move(e) {
+            if(!isDragging) return;
+            e.preventDefault();
+            const cx = e.touches ? e.touches[0].clientX : e.clientX;
+            const cy = e.touches ? e.touches[0].clientY : e.clientY;
 
-            if(state.isJennifer) {
-                speakRandom(type);
-                if(type === 'phone') {
-                    playSound('angry'); // 嚴重錯誤音效
-                    screenEffect('flash'); 
-                    state.fun -= 20;
-                    spawnParticle(window.innerWidth/2, window.innerHeight/2, ['🤬', '📵']);
-                } else {
-                    playSound('angry'); // 普通錯誤
-                    spawnParticle(window.innerWidth/2, window.innerHeight/2, ['🤐', '🚫']);
-                }
+            let dx = cx - lastX;
+            let dy = cy - lastY;
+            x += dx; y += dy;
+            vx = dx * 1.5; vy = dy * 1.5; // 計算拋擲力度
+
+            lastX = cx; lastY = cy;
+            updatePos();
+        }
+
+        function end() {
+            if(!isDragging) return;
+            isDragging = false;
+            pet.style.cursor = 'grab';
+            petImg.style.transform = 'scale(1)';
+
+            // 判斷是點擊還是拋擲
+            if(Math.abs(vx) < 2 && Math.abs(vy) < 2) {
+                tapInteraction();
             } else {
-                speakRandom(type);
-                playSound('happy'); // 成功音效
-                if(type === 'eat') state.hunger = Math.min(100, state.hunger + 20);
-                if(type === 'clean') state.clean = Math.min(100, state.clean + 20);
-                if(type === 'phone') state.fun = Math.min(100, state.fun + 20);
+                // 拋擲
+                speak("UNHAND ME!"); 
+                playSound(150, 'sawtooth'); // 尖銳聲音
+            }
+        }
+
+        function physicsLoop() {
+            if(!isDragging) {
+                // 彈簧中心引力
+                let centerX = window.innerWidth / 2;
+                let centerY = window.innerHeight / 2;
+                vx += (centerX - x) * 0.04;
+                vy += (centerY - y) * 0.04;
                 
-                const centerX = window.innerWidth / 2;
-                const centerY = window.innerHeight / 2;
-                if(type==='eat') spawnParticle(centerX, centerY, ['🍔', '🍕']);
-                if(type==='clean') spawnParticle(centerX, centerY, ['🧼', '✨']);
-                if(type==='phone') spawnParticle(centerX, centerY, ['📱', '😆']);
+                // 阻力
+                vx *= 0.92; vy *= 0.92;
+                x += vx; y += vy;
+                
+                // 轉動效果
+                petImg.style.transform = `rotate(${vx * 1.5}deg)`;
+                updatePos();
             }
-            updateUI();
+            requestAnimationFrame(physicsLoop);
         }
 
-        function toggleSleep() {
-            state.isSleeping = !state.isSleeping;
-            const stage = document.getElementById('game-stage');
-            if(state.isSleeping) {
-                stage.style.filter = "brightness(0.2) grayscale(0.8)";
-                speak(state.isJennifer ? "Finally." : "晚安~");
-            } else {
-                stage.style.filter = "none";
-                speak(state.isJennifer ? "Attention." : "早安！");
-            }
+        function updatePos() {
+            pet.style.left = x + 'px';
+            pet.style.top = y + 'px';
         }
 
-        function speakRandom(category) {
-            const list = state.isJennifer ? QUOTES.jennifer[category] : QUOTES.normal[category];
-            const text = list[Math.floor(Math.random() * list.length)];
+        // --- 4. 互動與說話 ---
+        function tapInteraction() {
+            // 隨機選一句
+            const text = phrases[Math.floor(Math.random() * phrases.length)];
             speak(text);
+            playSound(600, 'sine'); // 提示音
+            
+            // 震動特效
+            document.body.style.transform = `translate(${Math.random()*4-2}px, ${Math.random()*4-2}px)`;
+            setTimeout(()=> document.body.style.transform = 'none', 100);
         }
 
         function speak(text) {
-            const bubble = document.getElementById('bubble');
-            bubble.innerText = text;
-            bubble.style.transform = "translateX(-50%) scale(1)";
+            const b = document.getElementById('bubble');
+            b.innerText = text;
+            b.style.transform = "translateX(-50%) scale(1)";
             
-            if(state.isJennifer) {
-                bubble.style.border = "2px solid red";
-                bubble.style.color = "red";
-            } else {
-                bubble.style.border = "none";
-                bubble.style.color = "#333";
-            }
+            window.speechSynthesis.cancel();
+            const u = new SpeechSynthesisUtterance(text);
+            u.lang = 'en-US'; // 強制美式發音
+            u.rate = 1.1; // 語速稍快
+            u.pitch = 0.9; // 語調稍低沈嚴肅
+            
+            // 嘗試尋找好的英文語音
+            const voices = window.speechSynthesis.getVoices();
+            const engVoice = voices.find(v => v.lang.includes('en-US') || v.lang.includes('en-GB'));
+            if(engVoice) u.voice = engVoice;
 
-            if('speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-                const u = new SpeechSynthesisUtterance(text);
-                if(state.isJennifer) {
-                    // 強制英文語音
-                    u.lang = 'en-US'; 
-                    u.pitch = 0.8; 
-                    u.rate = 1.2; 
-                } else {
-                    // 廣東話語音
-                    u.lang = 'zh-HK';
-                    u.pitch = 1.3; 
-                    u.rate = 1.1; 
-                }
-                window.speechSynthesis.speak(u);
-            }
+            window.speechSynthesis.speak(u);
 
-            setTimeout(() => bubble.style.transform = "translateX(-50%) scale(0)", 2500);
+            setTimeout(() => b.style.transform = "translateX(-50%) scale(0)", 3000);
         }
 
-        function screenEffect(type) {
-            const stage = document.getElementById('game-stage');
-            if(type === 'shake') {
-                stage.classList.add('shake-screen');
-                setTimeout(()=>stage.classList.remove('shake-screen'), 500);
-            } else if (type === 'flash') {
-                stage.classList.add('flash-screen');
-                setTimeout(()=>stage.classList.remove('flash-screen'), 500);
-            }
-        }
-
-        function spawnParticle(x, y, emojis) {
-            const p = document.createElement('div');
-            p.innerText = emojis[Math.floor(Math.random() * emojis.length)];
-            p.className = 'particle';
-            p.style.left = x + 'px';
-            p.style.top = y + 'px';
-            const randX = (Math.random() - 0.5) * 50;
-            p.style.transform = `translate(${randX}px, 0)`;
-            document.body.appendChild(p);
-            setTimeout(() => p.remove(), 1000);
-        }
-
-        function loop() {
-            if(state.isSleeping) return;
-            state.hunger = Math.max(0, state.hunger - 1);
-            state.clean = Math.max(0, state.clean - 0.5);
-            state.fun = Math.max(0, state.fun - 1);
-            updateUI();
-        }
-
-        function updateUI() {
-            document.getElementById('b-hunger').style.width = state.hunger + '%';
-            document.getElementById('b-clean').style.width = state.clean + '%';
-            document.getElementById('b-fun').style.width = state.fun + '%';
+        function playSound(freq, type) {
+            const osc = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            osc.connect(g); g.connect(audioCtx.destination);
+            g.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.3);
         }
     </script>
 </body>
