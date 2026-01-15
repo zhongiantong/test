@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>JENNIFER: EAT POOP EDITION</title>
+    <title>JENNIFER: THE ENDING</title>
     <script src="https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.3.0/dist/imgly-background-removal.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600&family=Noto+Sans+TC:wght@700&display=swap" rel="stylesheet">
     
@@ -20,8 +20,11 @@
         /* 狀態列 */
         #status-panel {
             position: absolute; top: 15px; left: 15px; width: 140px;
-            display: flex; flex-direction: column; gap: 8px; z-index: 30; pointer-events: none;
+            display: flex; flex-direction: column; gap: 8px; z-index: 30; pointer-events: none; /* 讓點擊穿透 */
         }
+        /* 關鍵修正：讓裡面的按鈕可以被點擊 */
+        #status-panel button { pointer-events: auto; }
+        
         .bar-box {
             background: var(--bar-bg); border-radius: 10px; padding: 4px 8px;
             display: flex; align-items: center; gap: 5px; border: 1px solid rgba(255,255,255,0.3);
@@ -39,10 +42,12 @@
         #pet-img {
             width: 100%; height: 100%; object-fit: cover; border-radius: 50%;
             border: 5px solid rgba(255,255,255,0.5); pointer-events: none;
-            transition: transform 0.2s; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.5));
+            transition: transform 0.2s, filter 0.5s; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.5));
         }
+        /* 狀態樣式 */
         .dirty { filter: sepia(0.8) brightness(0.8) !important; border-color: #5d4037 !important; }
-        .sick { filter: hue-rotate(90deg) !important; } /* 吃到屎變綠 */
+        .sad { filter: grayscale(1) brightness(0.7) contrast(1.2) !important; } /* 傷心黑白 */
+        .attack { transition: 0.2s !important; transform: scale(20) !important; } /* 攻擊放大 */
 
         /* 屎 (可拖曳) */
         .poop { 
@@ -86,21 +91,32 @@
         }
         #bubble::after { content:''; position: absolute; bottom:-10px; left:50%; transform:translateX(-50%); border:10px solid transparent; border-top-color:white; }
 
+        /* GAME OVER 畫面 */
+        #game-over-screen {
+            position: fixed; inset: 0; background: black; z-index: 1000;
+            display: none; flex-direction: column; justify-content: center; align-items: center;
+            color: red; font-family: 'Noto Sans TC', sans-serif;
+        }
+        .go-text { font-size: 60px; font-weight: 900; letter-spacing: 5px; text-shadow: 0 0 10px red; }
+        .restart-btn { margin-top: 20px; padding: 10px 30px; border: 2px solid white; background: transparent; color: white; font-size: 20px; cursor: pointer; }
+
         /* 設定頁 */
         #setup { position: fixed; inset: 0; background: #222; z-index: 999; display: flex; flex-direction: column; align-items: center; padding: 20px; }
         .setup-card { background: #333; padding: 20px; border-radius: 15px; width: 100%; max-width: 320px; margin-bottom: 15px; color: white; text-align: center; }
         input[type="text"] { width: 90%; padding: 10px; margin-top: 10px; border-radius: 5px; border: none; font-size:16px; }
         .btn-start { width:200px; padding:15px; border-radius:30px; border:none; background:var(--primary); font-weight:bold; font-size:18px; cursor:pointer; margin-top:10px; }
-        
-        /* 震動動畫 */
-        .shake-screen { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; transform: translate3d(0, 0, 0); }
-        @keyframes shake { 10%, 90% { transform: translate3d(-10px, 0, 0); } 20%, 80% { transform: translate3d(10px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-15px, 0, 0); } 40%, 60% { transform: translate3d(15px, 0, 0); } }
     </style>
 </head>
 <body>
 
+    <div id="game-over-screen">
+        <div class="go-text">YOU DIED</div>
+        <div style="color: white; margin-top: 10px;">SHE DID NOT LIKE THAT.</div>
+        <button class="restart-btn" onclick="location.reload()">TRY AGAIN</button>
+    </div>
+
     <div id="setup">
-        <h1 style="color:white; font-family:'Fredoka'">POOP FEEDER v14</h1>
+        <h1 style="color:white; font-family:'Fredoka'">POOP KO v15</h1>
         
         <div class="setup-card" onclick="document.getElementById('file').click()">
             <img id="prev-img" style="width:100px; height:100px; border-radius:50%; object-fit:cover; display:none; margin:0 auto; border: 3px solid white;">
@@ -117,7 +133,7 @@
         <div class="setup-card" style="display:flex; justify-content:space-between; align-items:center;">
             <div style="text-align:left;">
                 <strong style="color:var(--danger)">JENNIFER MODE</strong>
-                <div style="font-size:10px; color:#aaa">She hates poop.</div>
+                <div style="font-size:10px; color:#aaa">Don't feed her poop.</div>
             </div>
             <input type="checkbox" id="mode-sw" style="width:25px; height:25px;">
         </div>
@@ -137,7 +153,7 @@
             <div class="bar-box">
                 <span class="icon">⚡</span><div class="progress-track"><div id="bar-energy" class="progress-fill" style="background:#cc00ff; width:100%"></div></div>
             </div>
-            <button onclick="changeScene()" style="margin-top:5px; background:rgba(255,255,255,0.2); border:1px solid rgba(255,255,255,0.3); color:white; border-radius:20px; font-size:10px; padding:5px; width:100%;">🏞️ CHANGE SCENE</button>
+            <button onclick="changeScene()" style="margin-top:5px; background:rgba(255,255,255,0.2); border:1px solid rgba(255,255,255,0.3); color:white; border-radius:20px; font-size:10px; padding:5px; width:100%; cursor: pointer;">🏞️ CHANGE SCENE</button>
         </div>
 
         <div id="pet-container">
@@ -159,26 +175,26 @@
     <script>
         // --- 變數 ---
         let isJennifer = false;
+        let isSad = false; // 普通模式傷心狀態
+        let isGameOver = false;
+
         let playerName = "Tom";
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         
         let stats = { hunger: 80, clean: 80, energy: 80 };
         let poopCount = 0;
         
-        // 物理與互動
+        // 物理
         let px = window.innerWidth/2, py = window.innerHeight - 250;
         let vx = 0, vy = 0;
         let isDraggingPet = false, lastX, lastY;
         let currentTool = null, isToolDragging = false;
-        
-        // 拖屎專用
-        let draggingPoopEl = null;
-        let poopOffX = 0, poopOffY = 0;
+        let draggingPoopEl = null, poopOffX = 0, poopOffY = 0, poopClickTime = 0;
 
         const scenes = ['bg-livingroom', 'bg-park', 'bg-class'];
         let sceneIdx = 0;
 
-        // --- 1. 初始化 ---
+        // --- 初始化 ---
         document.getElementById('file').addEventListener('change', async (e) => {
             const f = e.target.files[0];
             if(!f) return;
@@ -200,7 +216,7 @@
 
             if(isJennifer) {
                 document.getElementById('stage').className = 'bg-class';
-                speak("Don't make a mess.");
+                speak("Don't make me angry.");
             } else {
                 speak("Hi " + playerName + "!");
             }
@@ -215,15 +231,14 @@
             window.addEventListener('touchend', onUp);
         }
 
-        // --- 2. 物理 (湯姆貓) ---
+        // --- 物理 Loop ---
         const petC = document.getElementById('pet-container');
         const petImg = document.getElementById('pet-img');
-
         petC.addEventListener('mousedown', startDragPet);
         petC.addEventListener('touchstart', startDragPet, {passive:false});
 
         function startDragPet(e) {
-            if(isToolDragging || draggingPoopEl) return;
+            if(isToolDragging || draggingPoopEl || isGameOver) return;
             e.preventDefault();
             isDraggingPet = true;
             vx = 0; vy = 0;
@@ -232,9 +247,18 @@
             lastX = cx; lastY = cy;
             petC.style.cursor = 'grabbing';
             petImg.style.transform = 'scale(1.1)';
+            
+            if(isSad && !isJennifer) {
+                // 摸摸安慰
+                speak("Thank you...");
+                isSad = false;
+                petImg.classList.remove('sad');
+            }
         }
 
         function physicsLoop() {
+            if(isGameOver) return; // 遊戲結束停止物理
+
             if(!isDraggingPet) {
                 vy += 0.8; 
                 px += vx; py += vy;
@@ -246,72 +270,56 @@
                 if(px < 50) { px = 50; vx = -vx * 0.6; }
                 if(px > window.innerWidth - 50) { px = window.innerWidth - 50; vx = -vx * 0.6; }
 
-                updatePetPos();
+                petC.style.left = px + 'px'; petC.style.top = py + 'px';
+                
                 if(py < floorY - 10) petImg.style.transform = `rotate(${vx * 2}deg)`;
                 else petImg.style.transform = `rotate(0deg)`;
             }
             requestAnimationFrame(physicsLoop);
         }
 
-        function updatePetPos() {
-            petC.style.left = px + 'px'; petC.style.top = py + 'px';
-        }
-
-        // --- 3. 屎系統 (點擊清理 + 拖曳餵食) ---
+        // --- 屎系統 ---
         function spawnPoop() {
+            if(isGameOver) return;
             const p = document.createElement('div');
             p.innerText = "💩"; p.className = 'poop';
             const ry = window.innerHeight - 100 - Math.random()*80; 
             const rx = Math.random() * (window.innerWidth - 80) + 40;
             p.style.left = rx + 'px'; p.style.top = ry + 'px';
-            
-            // 屎的監聽
             p.addEventListener('mousedown', (e) => startDragPoop(e, p));
             p.addEventListener('touchstart', (e) => startDragPoop(e, p), {passive:false});
-            
             document.body.appendChild(p);
             poopCount++;
             playSound('fart');
         }
 
-        // 開始拖屎
-        let poopClickTime = 0;
         function startDragPoop(e, el) {
+            if(isGameOver) return;
             e.stopPropagation(); e.preventDefault();
             draggingPoopEl = el;
             poopClickTime = Date.now();
-            
             const cx = e.touches ? e.touches[0].clientX : e.clientX;
             const cy = e.touches ? e.touches[0].clientY : e.clientY;
-            
-            // 計算偏移讓拖曳更順
             const rect = el.getBoundingClientRect();
-            poopOffX = cx - rect.left;
-            poopOffY = cy - rect.top;
-
-            el.style.zIndex = 999;
-            el.style.transform = "scale(1.3)";
+            poopOffX = cx - rect.left; poopOffY = cy - rect.top;
+            el.style.zIndex = 999; el.style.transform = "scale(1.3)";
         }
 
-        // --- 4. 統一移動處理 (寵物, 道具, 屎) ---
+        // --- 統一移動 ---
         function onMove(e) {
+            if(isGameOver) return;
             const cx = e.touches ? e.touches[0].clientX : e.clientX;
             const cy = e.touches ? e.touches[0].clientY : e.clientY;
 
-            // 1. 拖寵物
             if(isDraggingPet) {
                 e.preventDefault();
                 vx = (cx - lastX) * 1.2; vy = (cy - lastY) * 1.2;
                 px = cx; py = cy; lastX = cx; lastY = cy;
-                updatePetPos();
-            }
-            // 2. 拖道具
-            else if(isToolDragging) {
+                petC.style.left = px + 'px'; petC.style.top = py + 'px';
+            } else if(isToolDragging) {
                 const toolEl = document.getElementById('active-tool');
                 toolEl.style.left = cx + 'px'; toolEl.style.top = cy + 'px';
-            }
-            // 3. 拖屎 (餵食)
-            else if(draggingPoopEl) {
+            } else if(draggingPoopEl) {
                 e.preventDefault();
                 draggingPoopEl.style.left = (cx - poopOffX) + 'px';
                 draggingPoopEl.style.top = (cy - poopOffY) + 'px';
@@ -319,16 +327,12 @@
         }
 
         function onUp(e) {
+            if(isGameOver) return;
             const cx = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
             const cy = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
 
-            // 放開寵物
-            if(isDraggingPet) {
-                isDraggingPet = false; petC.style.cursor = 'grab';
-                petImg.style.transform = 'scale(1)';
-            }
+            if(isDraggingPet) { isDraggingPet = false; petC.style.cursor = 'grab'; petImg.style.transform = 'scale(1)'; }
             
-            // 放開道具
             if(isToolDragging) {
                 isToolDragging = false;
                 document.getElementById('active-tool').style.display = 'none';
@@ -336,26 +340,15 @@
                 currentTool = null;
             }
 
-            // 放開屎
             if(draggingPoopEl) {
-                const el = draggingPoopEl;
-                draggingPoopEl = null;
-                el.style.zIndex = 100;
-                el.style.transform = "scale(1)";
-
+                const el = draggingPoopEl; draggingPoopEl = null;
+                el.style.zIndex = 100; el.style.transform = "scale(1)";
                 const timeDiff = Date.now() - poopClickTime;
                 
-                // 判斷：如果是短按點擊 -> 清理
-                // 如果是拖曳到嘴邊 -> 餵食
-                if(timeDiff < 200) {
-                    cleanPoop(el);
-                } else {
-                    if(checkHit(cx, cy)) {
-                        forceFeedPoop(el);
-                    } else {
-                        // 沒餵到，掉回地板
-                        fallPoop(el);
-                    }
+                if(timeDiff < 200) cleanPoop(el); // 點擊 = 清理
+                else {
+                    if(checkHit(cx, cy)) forceFeedPoop(el); // 餵食
+                    else fallPoop(el); // 掉落
                 }
             }
         }
@@ -365,11 +358,45 @@
             return (x > rect.left && x < rect.right && y > rect.top && y < rect.bottom);
         }
 
-        // --- 5. 屎的互動 ---
+        // --- 核心結局邏輯 ---
+        function forceFeedPoop(el) {
+            el.remove();
+            poopCount = Math.max(0, poopCount-1);
+            
+            if(isJennifer) {
+                // Jennifer 模式：瞬間 KO
+                triggerJenniferKO();
+            } else {
+                // 普通模式：傷心但繼續
+                isSad = true;
+                petImg.classList.add('sad');
+                speak("Why...?");
+                playSound('bad');
+                stats.clean = 0;
+                stats.hunger = 100; // 飽了，但是是屎
+                updateBars();
+            }
+        }
+
+        function triggerJenniferKO() {
+            isGameOver = true;
+            // 視覺特效：瞬間放大撲向鏡頭
+            petImg.classList.add('attack'); 
+            
+            // 音效：尖叫
+            playSound('scream');
+            
+            // 延遲跳出黑幕
+            setTimeout(() => {
+                document.getElementById('game-over-screen').style.display = 'flex';
+                document.querySelector('.dock').style.display = 'none';
+                document.getElementById('status-panel').style.display = 'none';
+            }, 300);
+        }
+
         function cleanPoop(el) {
             playSound('clean');
-            el.style.transition = "0.5s";
-            el.style.transform = "translateY(-50px) scale(0)";
+            el.style.transition = "0.5s"; el.style.transform = "translateY(-50px) scale(0)";
             setTimeout(() => el.remove(), 500);
             poopCount = Math.max(0, poopCount-1);
             stats.clean += 10;
@@ -377,42 +404,17 @@
             updateBars();
         }
 
-        function forceFeedPoop(el) {
-            el.remove(); // 屎消失
-            poopCount = Math.max(0, poopCount-1);
-            
-            // 懲罰效果
-            if(isJennifer) {
-                speak("HOW DARE YOU!!! SICK!");
-                playSound('scream'); // 尖叫
-                shakeScreen();
-                // 變綠臉
-                petImg.classList.add('sick');
-                setTimeout(()=>petImg.classList.remove('sick'), 3000);
-                stats.clean = 0; // 瞬間最髒
-                stats.hunger = 100; // 雖然飽了但...
-            } else {
-                speak("Ewww! Gross! Why?!");
-                playSound('bad');
-                petImg.classList.add('sick');
-                setTimeout(()=>petImg.classList.remove('sick'), 3000);
-                stats.clean = 0;
-            }
-            updateBars();
-        }
-
         function fallPoop(el) {
-            // 簡單重力落下
             el.style.transition = "top 0.5s ease-in";
             el.style.top = (window.innerHeight - 150) + 'px';
             setTimeout(() => el.style.transition = "none", 500);
         }
 
-        // --- 6. 道具與其他 ---
+        // --- 道具 ---
         function spawnTool(type, e) {
+            if(isGameOver) return;
             if(e) e.preventDefault();
-            currentTool = type;
-            isToolDragging = true;
+            currentTool = type; isToolDragging = true;
             const t = document.getElementById('active-tool');
             t.innerText = { food:'🍔', soap:'🧼', bed:'🛏️', phone:'📱' }[type];
             t.style.display = 'block';
@@ -420,10 +422,17 @@
         }
 
         function applyTool(type) {
+            if(isSad && type === 'food' && !isJennifer) {
+                // 餵食可以解除傷心
+                isSad = false;
+                petImg.classList.remove('sad');
+                speak("Yummy! I forgive you.");
+            }
+
             if(isJennifer) {
                 if(type==='food') speak("No eating in class!");
                 else if(type==='soap') { stats.clean=100; speak("Cleanliness is key."); playSound('clean'); document.querySelectorAll('.poop').forEach(e=>e.remove()); poopCount=0; }
-                else if(type==='phone') { speak("DETENTION!"); shakeScreen(); playSound('bad'); }
+                else if(type==='phone') { speak("DETENTION!"); playSound('bad'); }
             } else {
                 if(type==='food') { stats.hunger=Math.min(100, stats.hunger+30); speak("Yum!"); playSound('eat'); }
                 else if(type==='soap') { stats.clean=100; speak("Fresh!"); playSound('clean'); document.querySelectorAll('.poop').forEach(e=>e.remove()); poopCount=0; }
@@ -433,12 +442,16 @@
         }
 
         function survivalLoop() {
+            if(isGameOver) return;
             stats.hunger = Math.max(0, stats.hunger-1);
             stats.clean = Math.max(0, stats.clean-0.5);
             stats.energy = Math.max(0, stats.energy-0.5);
+            
+            // 拉屎機率
             if(stats.hunger > 50 && Math.random()<0.08) spawnPoop();
             
-            if(stats.clean < 40) {
+            // 骯髒狀態 (如果不是傷心狀態)
+            if(stats.clean < 40 && !isSad) {
                 petImg.classList.add('dirty');
                 const fz = document.getElementById('flies-zone');
                 if(fz.innerHTML === '') fz.innerHTML = '<div class="fly" style="top:-30px">🪰</div><div class="fly" style="left:-30px; animation-delay:0.5s">🪰</div>';
@@ -467,14 +480,12 @@
             setTimeout(()=>b.style.transform="translateX(-50%) scale(0)", 2000);
         }
         
-        function shakeScreen() {
-            document.body.classList.remove('shake-screen');
-            void document.body.offsetWidth;
-            document.body.classList.add('shake-screen');
-        }
-
         function changeScene() {
-            if(isJennifer) { speak("Sit down."); return; }
+            if(isGameOver) return;
+            if(isJennifer) { 
+                // 即使是 Jennifer 模式，現在也允許切換，但她會碎念
+                speak("Fine. Sit anywhere."); 
+            }
             sceneIdx = (sceneIdx+1)%scenes.length;
             document.getElementById('stage').className = scenes[sceneIdx];
         }
@@ -485,7 +496,7 @@
             const now = audioCtx.currentTime;
             if(t==='pop') { osc.frequency.setValueAtTime(600,now); osc.frequency.exponentialRampToValueAtTime(1000,now+0.1); }
             else if(t==='fart') { osc.type='sawtooth'; osc.frequency.setValueAtTime(150,now); osc.frequency.linearRampToValueAtTime(50,now+0.4); }
-            else if(t==='scream') { osc.type='sawtooth'; osc.frequency.setValueAtTime(800,now); osc.frequency.linearRampToValueAtTime(1200,now+0.1); osc.frequency.linearRampToValueAtTime(800,now+0.3); } // 尖叫
+            else if(t==='scream') { osc.type='sawtooth'; osc.frequency.setValueAtTime(500,now); osc.frequency.exponentialRampToValueAtTime(100,now+0.5); g.gain.setValueAtTime(0.5,now); } // 恐怖聲音
             else if(t==='bad') { osc.type='square'; osc.frequency.setValueAtTime(150,now); osc.frequency.linearRampToValueAtTime(100,now+0.3); }
             else { osc.frequency.setValueAtTime(400,now); }
             g.gain.setValueAtTime(0.2,now); g.gain.linearRampToValueAtTime(0,now+0.3);
