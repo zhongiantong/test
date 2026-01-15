@@ -3,33 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>My AI Pet 3.0 - Identity Recognition</title>
+    <title>My AI Pet 4.0 - Auto Memory</title>
     <script src="https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.3.0/dist/imgly-background-removal.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <style>
         /* --- 基礎 UI --- */
         body { margin: 0; background: #111; font-family: 'Fredoka', sans-serif; overflow: hidden; user-select: none; }
-
-        /* --- 遊戲場景 --- */
         #game-wrapper {
             position: relative; width: 100vw; height: 100vh;
             transition: background 0.5s; overflow: hidden;
             background-size: cover; background-position: center;
         }
-
         /* 普通模式 */
         .scene-normal { background: radial-gradient(circle, #fff9c4, #ffecb3); }
-        
-        /* 老師模式 (高壓感) */
+        /* 老師模式 */
         .scene-teacher { 
-            background: linear-gradient(180deg, #3e2723 0%, #5d4037 100%); 
-            box-shadow: inset 0 0 100px rgba(0,0,0,0.8);
+            background: linear-gradient(180deg, #2c1e1a 0%, #4a332a 100%); 
+            box-shadow: inset 0 0 100px rgba(0,0,0,0.9);
         }
         .scene-teacher::before {
-            content: "NO ELECTRONIC DEVICES";
-            position: absolute; top: 5%; width: 100%; text-align: center;
-            color: rgba(255,0,0,0.3); font-family: 'Share Tech Mono', monospace; font-size: 30px; letter-spacing: 5px; pointer-events: none;
+            content: "NO PHONES ALLOWED";
+            position: absolute; top: 10%; width: 100%; text-align: center;
+            color: rgba(255,0,0,0.15); font-family: 'Share Tech Mono', monospace; font-size: 40px; pointer-events: none;
         }
 
         .dark-mode { filter: brightness(0.2); }
@@ -40,13 +36,7 @@
         .stat-badge { background: rgba(255,255,255,0.9); padding: 5px 8px; border-radius: 15px; width: 55px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
         .progress-bar { width: 100%; height: 5px; background: #ddd; border-radius: 3px; margin-top: 3px; overflow: hidden; }
         .progress-fill { height: 100%; width: 100%; transition: width 0.5s; }
-
-        /* --- 識別掃描特效 --- */
-        #scan-line {
-            position: absolute; top: 0; left: 0; width: 100%; height: 5px; background: #00ff00;
-            box-shadow: 0 0 10px #00ff00; opacity: 0; pointer-events: none; z-index: 50;
-        }
-        @keyframes scan { 0% { top: 0%; opacity: 1; } 50% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
+        #mode-badge { align-self: center; font-size: 10px; padding: 4px 8px; border-radius: 10px; color: white; background: rgba(0,0,0,0.5); font-weight: bold; }
 
         /* --- 寵物本體 --- */
         #pet-container {
@@ -56,7 +46,6 @@
         }
         #pet-img { width: 100%; height: 100%; object-fit: contain; transition: transform 0.2s; pointer-events: none; }
 
-        /* 對話氣泡 */
         #bubble {
             position: absolute; top: -100px; left: 50%; transform: translateX(-50%) scale(0);
             background: white; padding: 15px 20px; border-radius: 20px;
@@ -86,7 +75,7 @@
             font-size: 10px; color: #555; font-weight: bold; white-space: nowrap;
         }
 
-        /* --- 設定與上傳層 (黑色風格) --- */
+        /* --- 設定層 --- */
         #setup-layer {
             position: fixed; inset: 0; background: #1a1a1a; z-index: 999;
             display: flex; flex-direction: column; align-items: center; color: white;
@@ -94,7 +83,7 @@
         }
         h1 { font-family: 'Share Tech Mono', monospace; color: #00d2ff; text-shadow: 0 0 10px #00d2ff; margin-bottom: 5px; }
         
-        .box { background: #333; padding: 15px; border-radius: 10px; width: 100%; max-width: 320px; margin-bottom: 15px; border: 1px solid #444; }
+        .box { background: #2a2a2a; padding: 15px; border-radius: 10px; width: 100%; max-width: 320px; margin-bottom: 15px; border: 1px solid #444; }
         .box h3 { margin: 0 0 10px 0; font-size: 14px; color: #aaa; text-transform: uppercase; border-bottom: 1px solid #555; padding-bottom: 5px; }
 
         .btn {
@@ -105,65 +94,74 @@
         .btn-start { background: linear-gradient(45deg, #00d2ff, #007bff); color: white; font-size: 18px; margin-top: 20px; display: none; }
         
         .status-txt { font-size: 12px; color: #888; margin-top: 5px; text-align: center; }
-        .match-indicator { color: #ff3d00; font-weight: bold; display: none; animation: flash 1s infinite; margin-top:10px; text-align:center;}
-        @keyframes flash { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .match-indicator { color: #ff3d00; font-weight: bold; display: none; margin-top:10px; text-align:center; padding: 10px; border: 1px dashed #ff3d00; background: rgba(255, 61, 0, 0.1); border-radius: 5px;}
 
-        /* 預覽頭像 */
-        .preview-circle { width: 60px; height: 60px; border-radius: 50%; background: #000; overflow: hidden; margin: 0 auto; border: 2px solid #555; }
+        /* 手動開關 */
+        .manual-check { margin-top: 15px; display: flex; align-items: center; gap: 10px; padding: 10px; background: #333; border-radius: 5px; }
+        .manual-check input { width: 20px; height: 20px; accent-color: #ff3d00; }
+        .manual-check label { font-size: 13px; color: #ddd; }
+
+        .preview-circle { width: 60px; height: 60px; border-radius: 50%; background: #000; overflow: hidden; margin: 0 auto; border: 2px solid #555; display: flex; align-items: center; justify-content: center; color: #555; font-size: 20px;}
         .preview-circle img { width: 100%; height: 100%; object-fit: cover; }
-
         input[type="text"] { width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #555; background: #222; color: white; box-sizing: border-box;}
-
-        /* Loader */
-        .loader { width: 20px; height: 20px; border: 3px solid #fff; border-bottom-color: transparent; border-radius: 50%; display: inline-block; animation: rotation 1s linear infinite; display:none;}
-        @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        #scan-line { position: absolute; top: 0; left: 0; width: 100%; height: 5px; background: #00ff00; box-shadow: 0 0 10px #00ff00; opacity: 0; pointer-events: none; z-index: 50; }
+        @keyframes scan { 0% { top: 0%; opacity: 1; } 50% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
 
     </style>
 </head>
 <body>
 
     <div id="setup-layer">
-        <h1>AI IDENTITY 3.0</h1>
-        <p style="font-size:12px; color:#666; margin-bottom:20px;">BIO-METRIC SCANNING PROTOCOL</p>
+        <h1>AI PET 4.0</h1>
+        <p style="font-size:12px; color:#666; margin-bottom:20px;">MEMORY CORE ACTIVATED</p>
 
         <div class="box">
-            <h3>Step 1: Target Registration (Target)</h3>
-            <p style="font-size:11px; color:#888;">上傳你要偵測的「那個人」(老師) 的照片作為比對基準。</p>
-            <div class="preview-circle" id="target-preview"><img src="" style="display:none"></div>
-            <button class="btn btn-upload" onclick="document.getElementById('target-input').click()">
-                📂 上傳目標 (Reference)
-            </button>
+            <h3>Step 1: Teacher Reference</h3>
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <div class="preview-circle" id="target-preview">?</div>
+                <div style="flex:1;">
+                    <div id="target-status" class="status-txt" style="text-align:left;">Checking Memory...</div>
+                    <button class="btn btn-upload" style="font-size:12px; padding:8px;" onclick="document.getElementById('target-input').click()">
+                        🔄 更新老師照片
+                    </button>
+                    <button class="btn" style="font-size:10px; padding:5px; background: #b71c1c; color:white; margin-top:5px;" onclick="clearMemory()">
+                        🗑 清除記憶
+                    </button>
+                </div>
+            </div>
             <input type="file" id="target-input" accept="image/*" style="display:none">
-            <div id="target-status" class="status-txt">未設定 (預設為普通模式)</div>
         </div>
 
         <div class="box">
-            <h3>Step 2: Player Upload</h3>
+            <h3>Step 2: Play Now</h3>
             <div class="preview-circle" id="player-preview"><img src="" style="display:none"></div>
             <button class="btn btn-upload" onclick="document.getElementById('player-input').click()">
                 📂 上傳遊玩照片
             </button>
             <input type="file" id="player-input" accept="image/*" style="display:none">
-            <div id="player-status" class="status-txt">等待上傳...</div>
             
+            <div class="manual-check">
+                <input type="checkbox" id="force-teacher">
+                <label for="force-teacher">AI 偵測不到？強制開啟老師模式 (Force Teacher Mode)</label>
+            </div>
+
             <div style="margin-top:10px;">
-                <label style="font-size:12px; color:#aaa;">玩家名字:</label>
                 <input type="text" id="player-name" value="同學" placeholder="輸入名字">
             </div>
         </div>
 
-        <div id="analysis-result" class="match-indicator">⚠ IDENTITY MATCHED: TEACHER DETECTED ⚠</div>
+        <div id="analysis-result" class="match-indicator">⚠ TEACHER DETECTED ⚠</div>
 
         <button id="start-btn" class="btn btn-start" onclick="startGame()">
-            <span class="loader" id="start-loader"></span> 進入遊戲
+            🚀 進入遊戲
         </button>
 
-        <div id="model-status" style="position:fixed; bottom:10px; font-size:10px; color:#444;">Initialize AI Models...</div>
+        <div id="model-status" style="position:fixed; bottom:10px; font-size:10px; color:#444;">Initializing Neural Net...</div>
     </div>
 
     <div id="game-wrapper" class="scene-normal">
         <div id="scan-line"></div>
-        
         <div class="top-ui">
             <div class="status-row">
                 <div class="stat-badge">🍔 <div class="progress-bar"><div id="bar-hunger" class="progress-fill" style="background:#ff9800;"></div></div></div>
@@ -171,7 +169,7 @@
                 <div class="stat-badge">⚡ <div class="progress-bar"><div id="bar-energy" class="progress-fill" style="background:#ffeb3b;"></div></div></div>
                 <div class="stat-badge">😊 <div class="progress-bar"><div id="bar-fun" class="progress-fill" style="background:#e91e63;"></div></div></div>
             </div>
-            <div id="mode-badge" style="background:rgba(0,0,0,0.5); color:white; font-size:10px; padding:2px 5px; border-radius:5px; align-self:center;">NORMAL MODE</div>
+            <div id="mode-badge">NORMAL MODE</div>
         </div>
 
         <div id="pet-container">
@@ -188,14 +186,13 @@
     </div>
 
     <script>
-        // --- 核心變數 ---
         const state = {
             hunger: 80, clean: 80, energy: 80, fun: 80,
             isSleeping: false,
             playerName: "同學",
-            isTeacher: false, // 是否觸發老師模式
-            targetDescriptor: null, // 目標的人臉數據
-            playerDescriptor: null  // 玩家的人臉數據
+            isTeacher: false,
+            targetDescriptor: null, // 存放老師特徵
+            playerDescriptor: null
         };
 
         const els = {
@@ -209,126 +206,168 @@
                 fun: document.getElementById('bar-fun')
             },
             modelStatus: document.getElementById('model-status'),
-            matchIndicator: document.getElementById('analysis-result')
+            matchIndicator: document.getElementById('analysis-result'),
+            targetStatus: document.getElementById('target-status'),
+            targetPreview: document.getElementById('target-preview')
         };
 
-        // --- 1. 初始化 AI 模型 ---
+        // --- 1. AI 模型載入 ---
         async function loadModels() {
-            els.modelStatus.innerText = "Loading Face AI Models...";
             try {
-                // 從 CDN 加載模型 (需要網路)
-                await faceapi.nets.ssdMobilenetv1.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models');
+                // 使用更輕量的模型 TinyFaceDetector 以提高偵測率
+                await faceapi.nets.tinyFaceDetector.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models');
                 await faceapi.nets.faceLandmark68Net.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models');
                 await faceapi.nets.faceRecognitionNet.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models');
-                els.modelStatus.innerText = "AI Models Ready.";
+                await faceapi.nets.ssdMobilenetv1.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models');
+                
+                els.modelStatus.innerText = "AI System Ready.";
                 console.log("Models Loaded");
+                
+                // 模型載入後，檢查有沒有記憶的老師
+                checkMemory();
             } catch (e) {
-                els.modelStatus.innerText = "AI Load Failed (Check Network)";
-                console.error(e);
+                els.modelStatus.innerText = "Model Load Error (Check Network)";
             }
         }
         loadModels();
 
-        // --- 2. 圖片處理與識別流程 ---
-
-        // A. 處理目標圖片 (Reference)
-        document.getElementById('target-input').addEventListener('change', async (e) => {
-            handleImageUpload(e.target.files[0], 'target');
-        });
-
-        // B. 處理玩家圖片 (Play)
-        document.getElementById('player-input').addEventListener('change', async (e) => {
-            handleImageUpload(e.target.files[0], 'player');
-        });
-
-        async function handleImageUpload(file, type) {
-            if (!file) return;
-            const imgUrl = URL.createObjectURL(file);
-            
-            // 顯示預覽
-            const previewEl = document.getElementById(type + '-preview').querySelector('img');
-            previewEl.src = imgUrl;
-            previewEl.style.display = 'block';
-            
-            const statusEl = document.getElementById(type + '-status');
-            statusEl.innerText = "Analyzing Face...";
-
-            // 1. 轉成 HTMLImageElement 供 AI 分析
-            const img = await faceapi.fetchImage(imgUrl);
-            
-            // 2. 偵測人臉並提取特徵 (Descriptor)
-            const detection = await faceapi.detectSingleFace(img).withFaceLandmarks().withFaceDescriptor();
-
-            if (detection) {
-                statusEl.innerText = "Face Detected ✅";
-                statusEl.style.color = "#4caf50";
-                
-                if (type === 'target') state.targetDescriptor = detection.descriptor;
-                if (type === 'player') {
-                    state.playerDescriptor = detection.descriptor;
-                    // 如果是玩家圖片，還要幫他去背
-                    processBackgroundRemoval(file); 
-                    // 執行比對
-                    compareFaces();
-                }
+        // --- 2. 記憶功能 (LocalStorage) ---
+        function checkMemory() {
+            const savedData = localStorage.getItem('teacherDescriptor');
+            if (savedData) {
+                // 將字串轉回 Float32Array 供 face-api 使用
+                state.targetDescriptor = new Float32Array(Object.values(JSON.parse(savedData)));
+                els.targetStatus.innerText = "✅ 老師特徵已讀取 (Auto-Loaded)";
+                els.targetStatus.style.color = "#4caf50";
+                els.targetPreview.innerText = "M"; // Memory
+                els.targetPreview.style.background = "#2e7d32";
+                els.targetPreview.style.color = "white";
             } else {
-                statusEl.innerText = "No Face Found ❌";
-                statusEl.style.color = "#ff5252";
-                if (type === 'player') processBackgroundRemoval(file); // 即使沒偵測到臉也讓他玩，只是不能識別
+                els.targetStatus.innerText = "❌ 無紀錄，請上傳 (Empty)";
             }
         }
 
-        async function processBackgroundRemoval(file) {
-            // 去背邏輯
-            document.getElementById('start-btn').style.display = 'none'; // 暫時隱藏開始按鈕
+        function clearMemory() {
+            localStorage.removeItem('teacherDescriptor');
+            state.targetDescriptor = null;
+            els.targetStatus.innerText = "🗑 記憶已清除";
+            els.targetPreview.innerText = "?";
+            els.targetPreview.style.background = "#000";
+        }
+
+        // --- 3. 圖片處理 ---
+        
+        // 上傳老師照片 (只為了提取特徵並存檔)
+        document.getElementById('target-input').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            els.targetStatus.innerText = "Analyzing Target...";
+            const imgUrl = URL.createObjectURL(file);
+            const img = await faceapi.fetchImage(imgUrl);
+            
+            // 使用 SSD 模型 (較精準) 提取特徵
+            const detection = await faceapi.detectSingleFace(img).withFaceLandmarks().withFaceDescriptor();
+
+            if (detection) {
+                state.targetDescriptor = detection.descriptor;
+                // 存入瀏覽器記憶體
+                localStorage.setItem('teacherDescriptor', JSON.stringify(detection.descriptor));
+                
+                els.targetStatus.innerText = "✅ 特徵已儲存 (Saved!)";
+                els.targetStatus.style.color = "#4caf50";
+                els.targetPreview.innerHTML = `<img src="${imgUrl}">`; // 暫時顯示
+            } else {
+                els.targetStatus.innerText = "❌ 偵測不到臉 (Try Another)";
+                els.targetStatus.style.color = "#ff5252";
+            }
+        });
+
+        // 上傳玩家照片 (遊玩用)
+        document.getElementById('player-input').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            // 1. 顯示預覽
+            const imgUrl = URL.createObjectURL(file);
+            const previewEl = document.getElementById('player-preview').querySelector('img');
+            previewEl.src = imgUrl;
+            previewEl.style.display = 'block';
+
+            // 2. 進行去背 (同時進行 AI 識別)
+            document.getElementById('start-btn').style.display = 'none';
+            els.matchIndicator.style.display = 'none';
+            
+            // 並行處理：識別 + 去背
+            Promise.all([
+                detectPlayerFace(imgUrl),
+                removeBackground(file)
+            ]).then(() => {
+                document.getElementById('start-btn').style.display = 'flex';
+            });
+        });
+
+        async function detectPlayerFace(imgUrl) {
+            const img = await faceapi.fetchImage(imgUrl);
+            // 降低偵測門檻 (ScoreThreshold 0.3) 讓它更容易抓到臉
+            const detection = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.3 }))
+                                    .withFaceLandmarks().withFaceDescriptor();
+
+            if (detection) {
+                state.playerDescriptor = detection.descriptor;
+                compareFaces();
+            } else {
+                console.log("No face detected on player image");
+                // 如果偵測不到，就不進行比對，保留預設 (或看強制開關)
+            }
+        }
+
+        async function removeBackground(file) {
             try {
                 const config = { publicPath: "https://cdn.jsdelivr.net/npm/@imgly/background-removal-data@1.3.0/dist/" };
                 const blob = await imglyRemoveBackground(file, config);
                 els.img.src = URL.createObjectURL(blob);
             } catch (err) {
-                els.img.src = URL.createObjectURL(file); // 失敗用原圖
+                els.img.src = URL.createObjectURL(file);
             }
-            document.getElementById('start-btn').style.display = 'flex';
         }
 
-        // --- 3. 核心比對邏輯 (Magic Happens Here) ---
         function compareFaces() {
-            if (!state.targetDescriptor || !state.playerDescriptor) {
-                state.isTeacher = false;
-                return;
-            }
+            if (!state.targetDescriptor || !state.playerDescriptor) return;
 
-            // 計算歐幾里得距離 (數值越小越像，通常 < 0.6 視為同一人)
             const distance = faceapi.euclideanDistance(state.targetDescriptor, state.playerDescriptor);
-            console.log("Face Distance:", distance);
+            console.log("Distance:", distance);
 
-            // 判斷閾值 (0.5 比較嚴格，0.6 比較寬鬆)
+            // 0.6 是標準，0.55 較嚴格。若覺得還是不準，可調回 0.6
             if (distance < 0.55) {
-                state.isTeacher = true;
                 els.matchIndicator.style.display = 'block';
-                els.matchIndicator.innerText = "⚠ 身份確認：目標人物 (MATCH) ⚠";
+                els.matchIndicator.innerText = "⚠ 身份確認：TEACHER DETECTED ⚠";
+                // 自動勾選強制開關，給視覺回饋
+                document.getElementById('force-teacher').checked = true;
             } else {
-                state.isTeacher = false;
                 els.matchIndicator.style.display = 'block';
+                els.matchIndicator.innerText = "身份確認：普通玩家";
                 els.matchIndicator.style.color = "#aaa";
-                els.matchIndicator.style.animation = "none";
-                els.matchIndicator.innerText = "身份確認：普通玩家 (NO MATCH)";
+                els.matchIndicator.style.borderColor = "#555";
+                document.getElementById('force-teacher').checked = false;
             }
         }
 
-        // --- 4. 遊戲開始 ---
+        // --- 4. 遊戲邏輯 ---
         function startGame() {
             state.playerName = document.getElementById('player-name').value.trim() || "同學";
+            
+            // 判定模式：優先看「強制開關」，其次看 AI 結果
+            const forceMode = document.getElementById('force-teacher').checked;
+            
+            state.isTeacher = forceMode; // 只要勾選，就是老師
+
             document.getElementById('setup-layer').style.display = 'none';
+            
+            if (state.isTeacher) initTeacherMode();
+            else initNormalMode();
 
-            // 根據識別結果初始化場景
-            if (state.isTeacher) {
-                initTeacherMode();
-            } else {
-                initNormalMode();
-            }
-
-            // 啟動掃描動畫
+            // 掃描特效
             const scan = document.getElementById('scan-line');
             scan.style.animation = "scan 2s ease-in-out";
 
@@ -339,23 +378,16 @@
             els.wrapper.className = 'scene-teacher';
             document.getElementById('mode-badge').innerText = "⚠ CLASSROOM MODE";
             document.getElementById('mode-badge').style.background = "#b71c1c";
-            
-            // 隨機開場
-            const intros = [
-                "Class is starting.", 
-                "Put your electronic devices away.", 
-                `I see you, ${state.playerName}.`
-            ];
-            talk(intros[Math.floor(Math.random()*intros.length)]);
+            talk(`I see you, ${state.playerName}.`);
         }
 
         function initNormalMode() {
             els.wrapper.className = 'scene-normal';
             document.getElementById('mode-badge').innerText = "NORMAL MODE";
+            document.getElementById('mode-badge').style.background = "#4caf50";
             talk(`嗨 ${state.playerName}！一起玩吧！`);
         }
 
-        // --- 5. 遊戲循環與動作 ---
         function gameLoop() {
             if (state.isSleeping) {
                 state.energy = Math.min(100, state.energy + 5);
@@ -367,17 +399,11 @@
                 state.fun = Math.max(0, state.fun - 2);
             }
             
-            // 老師模式的隨機事件
-            if(state.isTeacher && Math.random() < 0.1 && !state.isSleeping) {
-                const phrases = [
-                    "Folks.", 
-                    "Ladies...", 
-                    `I need to see ${state.playerName} after class.`,
-                    "Is that gum?"
-                ];
+            // 老師隨機插話
+            if(state.isTeacher && Math.random() < 0.15 && !state.isSleeping) {
+                const phrases = ["Focus.", "Pay attention.", "Is that homework?"];
                 talk(phrases[Math.floor(Math.random() * phrases.length)]);
             }
-
             updateUI();
         }
 
@@ -388,54 +414,41 @@
             els.bars.fun.style.width = state.fun + '%';
         }
 
-        // --- 互動功能 (根據身分變化) ---
-
-        function actionFeed() {
-            if (state.isTeacher) {
-                talk("No eating in my class.");
-                animPet('translateX(5px)'); // 搖頭拒絕
-            } else {
-                talk("好香喔～謝謝！");
-                state.hunger = Math.min(100, state.hunger + 20);
-                animPet('scale(1.1)');
-            }
-        }
-
-        function actionClean() {
-            if (state.isTeacher) {
-                talk("Line up properly.");
-                state.clean += 10;
-            } else {
-                talk("洗澡澡～");
-                state.clean = Math.min(100, state.clean + 20);
-            }
-        }
-
+        // --- 互動 ---
         function actionPlay() {
-            // 關鍵功能：手機
             if (state.isTeacher) {
-                talk("Put your electronic devices in your backpack!", true); // true = angry
-                state.fun -= 10; // 心情變差
-                animPet('scale(1.2)'); // 突然變大(生氣)
+                talk("Give me your phone. NOW.", true);
+                state.fun -= 20;
+                animPet('scale(1.3)'); // 暴怒
             } else {
-                talk("耶！玩遊戲！");
+                talk("耶！打傳說！");
                 state.fun = Math.min(100, state.fun + 20);
                 animPet('translateY(-20px)');
             }
         }
 
+        function actionFeed() {
+            if (state.isTeacher) {
+                talk("No eating in class.");
+                animPet('translateX(5px)');
+            } else {
+                talk("Yummy!");
+                state.hunger = Math.min(100, state.hunger + 20);
+                animPet('scale(1.1)');
+            }
+        }
+        function actionClean() {
+             if (state.isTeacher) { talk("Clean up your desk."); state.clean+=10; }
+             else { talk("洗香香～"); state.clean = Math.min(100, state.clean+20); }
+        }
         function actionSleep() {
             state.isSleeping = !state.isSleeping;
-            if (state.isSleeping) {
+            if(state.isSleeping) {
                 els.wrapper.classList.add('dark-mode');
-                if(state.isTeacher) {
-                    talk("Class dismiss.");
-                } else {
-                    talk("晚安...");
-                }
+                talk(state.isTeacher ? "Class dismissed." : "晚安 zzz");
             } else {
                 els.wrapper.classList.remove('dark-mode');
-                talk(state.isTeacher ? "Morning folks." : "早安！");
+                talk(state.isTeacher ? "Wake up." : "早安！");
             }
         }
 
@@ -447,28 +460,18 @@
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
                 const u = new SpeechSynthesisUtterance(text);
-                // 老師模式講英文，普通模式講中文
                 u.lang = /[a-zA-Z]/.test(text) ? 'en-US' : 'zh-HK';
-                if(state.isTeacher) {
-                    u.pitch = 0.8; // 老師聲音低沉一點
-                    u.rate = 1.1;
-                } else {
-                    u.pitch = 1.2; // 寵物聲音高一點
-                }
+                if(state.isTeacher) { u.pitch = 0.7; u.rate = 1.2; } 
+                else { u.pitch = 1.2; }
                 window.speechSynthesis.speak(u);
             }
-
-            setTimeout(() => {
-                els.bubble.style.transform = "translateX(-50%) scale(0)";
-            }, 3000);
+            setTimeout(() => { els.bubble.style.transform = "translateX(-50%) scale(0)"; }, 3000);
         }
-
         function animPet(trans) {
             const original = els.img.style.transform;
             els.img.style.transform = trans;
             setTimeout(() => els.img.style.transform = original, 300);
         }
-
     </script>
 </body>
 </html>
