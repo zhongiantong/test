@@ -94,7 +94,6 @@
             box-shadow: 0 5px 10px rgba(0,0,0,0.2); flex-shrink: 0;
         }
         .dock-btn:active { transform: scale(0.9); }
-        /* 沒收手機時隱藏 */
         .dock-btn.hidden { display: none !important; } 
 
         /* 對話氣泡 */
@@ -397,14 +396,15 @@
                 if(px < 50) { px = 50; vx = -vx * 0.6; }
                 if(px > window.innerWidth - 50) { px = window.innerWidth - 50; vx = -vx * 0.6; }
                 
-                // 更新位置
-                petC.style.left = px + 'px'; 
-                petC.style.top = py + 'px';
-                
                 // 滾動效果
                 if(py < floorY - 110) petImg.style.transform = `rotate(${vx * 2}deg)`;
                 else petImg.style.transform = `rotate(0deg)`;
             }
+
+            // CRITICAL FIX: 無論是否在拖曳，都要更新 DOM 位置
+            // 之前這行被放進了 if(!isDraggingPet) 裡，導致拖曳時畫面不動
+            petC.style.left = px + 'px'; 
+            petC.style.top = py + 'px';
 
             // 2. 足球物理 (修正卡住問題)
             if(isBallActive && !isDraggingBall) {
