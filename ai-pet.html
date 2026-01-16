@@ -11,7 +11,7 @@
         :root { --primary: #00f3ff; --danger: #ff003c; --bar-bg: rgba(0,0,0,0.6); }
         body { margin: 0; background: #000; overflow: hidden; font-family: 'Noto Sans TC', sans-serif; user-select: none; touch-action: none; }
 
-        /* 場景 */
+        /* 場景背景 */
         #stage { position: fixed; inset: 0; transition: 0.5s; z-index: 0; }
         .bg-livingroom { background: linear-gradient(to bottom, #ffeebb 0%, #c19a6b 90%, #8d6e63 90%); } 
         .bg-park { background: linear-gradient(to bottom, #87CEEB 0%, #90EE90 85%, #228B22 85%); }
@@ -20,7 +20,7 @@
         /* 閃光燈特效 */
         #flash-overlay { position: fixed; inset: 0; background: white; opacity: 0; pointer-events: none; z-index: 900; transition: opacity 0.1s; }
 
-        /* 狀態列 */
+        /* 左上角狀態列 */
         #status-panel {
             position: absolute; top: 15px; left: 15px; width: 140px;
             display: flex; flex-direction: column; gap: 8px; z-index: 30; pointer-events: none; 
@@ -35,7 +35,7 @@
         .progress-track { flex: 1; height: 8px; background: #333; border-radius: 5px; overflow: hidden; }
         .progress-fill { height: 100%; width: 100%; transition: width 0.3s, background 0.3s; }
         
-        /* 角色 */
+        /* 寵物本體 */
         #pet-container {
             position: absolute; width: 260px; height: 260px;
             left: 50%; top: 50%; transform: translate(-50%, -50%);
@@ -47,7 +47,7 @@
             transition: transform 0.1s; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.5));
         }
         
-        /* 狀態樣式 */
+        /* 寵物狀態濾鏡 */
         .dirty { filter: sepia(0.8) brightness(0.8) !important; border-color: #5d4037 !important; }
         .sad { filter: grayscale(1) brightness(0.7) contrast(1.2) !important; } 
         .sick { filter: hue-rotate(90deg) !important; }
@@ -66,7 +66,7 @@
         .fly { position: absolute; font-size: 20px; animation: fly 0.5s infinite linear; z-index: 15; pointer-events: none; }
         @keyframes fly { 0%{transform:translate(0,0)} 25%{transform:translate(5px,-5px)} 50%{transform:translate(0,-10px)} 75%{transform:translate(-5px,-5px)} 100%{transform:translate(0,0)} }
 
-        /* 道具層 (拖曳用) */
+        /* 拖曳中的道具 */
         #active-tool {
             position: absolute; font-size: 80px; pointer-events: none; z-index: 200;
             display: none; transform: translate(-50%, -50%); filter: drop-shadow(0 5px 10px rgba(0,0,0,0.3));
@@ -80,7 +80,7 @@
         }
         #soccer-ball:active { cursor: grabbing; }
 
-        /* 底部工具列 */
+        /* 底部工具列 (Dock) */
         .dock {
             position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
             display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
@@ -94,18 +94,19 @@
             box-shadow: 0 5px 10px rgba(0,0,0,0.2); flex-shrink: 0;
         }
         .dock-btn:active { transform: scale(0.9); }
-        .dock-btn.hidden { display: none !important; } /* 沒收手機用 */
+        /* 沒收手機時隱藏 */
+        .dock-btn.hidden { display: none !important; } 
 
-        /* 氣泡 */
+        /* 對話氣泡 */
         #bubble {
-            position: absolute; top: -130px; left: 50%; transform: translateX(-50%) scale(0);
+            position: absolute; top: -140px; left: 50%; transform: translateX(-50%) scale(0);
             background: white; padding: 15px 25px; border-radius: 30px; font-weight: bold; white-space: nowrap;
             box-shadow: 0 8px 25px rgba(0,0,0,0.3); pointer-events: none; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 250;
             max-width: 280px; white-space: normal; text-align: center; line-height: 1.3; font-size: 18px; border: 2px solid #eee;
         }
         #bubble::after { content:''; position: absolute; bottom:-12px; left:50%; transform:translateX(-50%); border:12px solid transparent; border-top-color:white; }
 
-        /* GAME OVER */
+        /* GAME OVER 畫面 */
         #game-over-screen {
             position: fixed; inset: 0; background: black; z-index: 1000;
             display: none; flex-direction: column; justify-content: center; align-items: center;
@@ -115,7 +116,7 @@
         @keyframes pulse { 0%{opacity:0.8} 50%{opacity:1} 100%{opacity:0.8} }
         .restart-btn { margin-top: 20px; padding: 10px 30px; border: 2px solid white; background: transparent; color: white; font-size: 20px; cursor: pointer; }
 
-        /* 設定頁 */
+        /* 設定頁面 */
         #setup { 
             position: fixed; inset: 0; background: #eee; z-index: 999; 
             display: flex; flex-direction: column; align-items: center; padding: 20px; 
@@ -208,7 +209,7 @@
     </div>
 
     <script>
-        // --- 變數 ---
+        // --- 全局變數 ---
         let isJennifer = false;
         let isSad = false; 
         let isGameOver = false;
@@ -218,26 +219,26 @@
         let stats = { hunger: 80, clean: 80, energy: 80 };
         let poopCount = 0;
         
-        // 角色物理
-        let px = window.innerWidth/2, py = window.innerHeight - 250;
+        // 角色物理變數
+        let px = window.innerWidth/2, py = window.innerHeight - 300;
         let vx = 0, vy = 0;
         let isDraggingPet = false, lastX, lastY;
         
-        // 道具物理
+        // 道具物理變數
         let currentTool = null, isToolDragging = false;
         let draggingPoopEl = null, poopOffX = 0, poopOffY = 0, poopClickTime = 0;
         
-        // 足球物理
+        // 足球物理變數
         let bx = -100, by = -100, bvx = 0, bvy = 0;
         let isBallActive = false, isDraggingBall = false;
         const ballEl = document.getElementById('soccer-ball');
 
+        // 語音與場景
         let speakTimeout;
         const scenes = ['bg-livingroom', 'bg-park', 'bg-class'];
         let sceneIdx = 0;
 
-        // --- 對話庫 ---
-        // 5. 加入指定口頭禪
+        // --- 完整語音庫 (包含所有要求) ---
         const dialogues = {
             normal: {
                 touch: ["Hehe!", "Love you!", "Yay!", "More!", "Best friend!", "Huggies!"],
@@ -259,30 +260,33 @@
                 food: ["No eating in class.", "Put that away.", "Is that gum?", "Not now."],
                 soap: ["Get that away.", "I prefer my natural scent.", "Leave me alone."],
                 bed: ["Wake up!", "Eyes on me!", "Stand up!"],
-                phone: ["Put your electronic devices in your backpack", "GIVE ME THAT!", "Confiscated!", "No phones!"], // 5. 指定金句
+                phone: ["Confiscated!", "No phones!", "Give me that!"], 
                 ball: ["Toys are forbidden.", "This is not a playground.", "Give me the ball.", "Grow up."],
                 book: ["Read page 394.", "Knowledge is power.", "Quiet reading time.", "Finally, studying."],
                 clean_poop: ["Wash your hands.", "Disgusting.", "About time."],
                 eat_poop_anger: ["HOW DARE YOU!", "VILE CHILD!", "GET OUT!", "YOU ARE FINISHED!"],
-                random: ["Folks.", "Ladies.", "Class dismiss.", "Line up with (NAME).", "I need to see (NAME) after class."] // 5. 指定金句
+                // 口頭禪集合
+                random: [
+                    "Folks.",
+                    "Ladies.",
+                    "Class dismissed.",
+                    "Line up with (NAME).",
+                    "I need to see (NAME) after class.",
+                    "Put your electronic devices in your backpack!",
+                    "Quiet down.",
+                    "Eyes front."
+                ]
             }
         };
 
         function getRandomText(category) {
             const mode = isJennifer ? 'jennifer' : 'normal';
-            let list;
-            // 隨機插入隨機口頭禪
-            if (isJennifer && category === 'idle' && Math.random() < 0.4) {
-                 list = dialogues.jennifer.random;
-            } else {
-                 list = dialogues[mode][category] || dialogues[mode]['touch'];
-            }
+            const list = dialogues[mode][category] || dialogues[mode]['touch'];
             let text = list[Math.floor(Math.random() * list.length)];
-            // 替換名字
             return text.replace(/\(NAME\)/g, playerName);
         }
 
-        // --- 設定特效 ---
+        // --- 設定頁面邏輯 ---
         function toggleSetupMode() {
             const isChecked = document.getElementById('mode-sw').checked;
             const setupDiv = document.getElementById('setup');
@@ -298,7 +302,6 @@
             }
         }
 
-        // --- 初始化 ---
         document.getElementById('file').addEventListener('change', async (e) => {
             const f = e.target.files[0];
             if(!f) return;
@@ -326,7 +329,14 @@
                 document.getElementById('stage').className = 'bg-class';
                 document.title = "JENNIFER";
                 speak("Class is in session.");
-                setInterval(() => { if(!isGameOver && Math.random()<0.1) speak(getRandomText('idle')); }, 8000); // 隨機說話
+                
+                // Jennifer 專屬碎念 Loop
+                setInterval(() => { 
+                    if(!isGameOver && !isDraggingPet && Math.random() < 0.4) {
+                        speak(getRandomText('random')); 
+                    }
+                }, 5000);
+
             } else {
                 document.title = "MY PET";
                 speak("Hi " + playerName + "!");
@@ -341,7 +351,7 @@
             window.addEventListener('touchend', onUp);
         }
 
-        // --- 物理 Loop ---
+        // --- 物理系統 ---
         const petC = document.getElementById('pet-container');
         const petImg = document.getElementById('pet-img');
         petC.addEventListener('mousedown', startDragPet);
@@ -363,339 +373,509 @@
         function physicsLoop() {
             if(isGameOver) return;
 
-            // 寵物物理
+            // 定義地板位置 (避免角色和球滾到工具列後面)
+            // 工具列大約高 80px + margin，我們把物理地板設在視窗高度 - 120px
+            const floorY = window.innerHeight - 120;
+
+            // 1. 寵物物理
             if(!isDraggingPet) {
-                vy += 0.8; px += vx; py += vy;
-                if(py < -100) { py = -100; vy = -vy * 0.5; } // 天花板
-                const floorY = window.innerHeight - 180;
-                if(py > floorY) { py = floorY; vy = -vy * 0.4; vx *= 0.8; if(Math.abs(vy) < 1) vy = 0; }
+                vy += 0.8; // 重力
+                px += vx; py += vy;
+
+                // 天花板碰撞
+                if(py < -100) { py = -100; vy = -vy * 0.5; }
+                
+                // 地板碰撞 (修正後)
+                if(py > floorY - 100) { 
+                    py = floorY - 100; 
+                    vy = -vy * 0.4; 
+                    vx *= 0.8; // 摩擦力
+                    if(Math.abs(vy) < 1) vy = 0; 
+                }
+                
+                // 左右牆壁
                 if(px < 50) { px = 50; vx = -vx * 0.6; }
                 if(px > window.innerWidth - 50) { px = window.innerWidth - 50; vx = -vx * 0.6; }
-                petC.style.left = px + 'px'; petC.style.top = py + 'px';
-                if(py < floorY - 10) petImg.style.transform = `rotate(${vx * 2}deg)`;
+                
+                // 更新位置
+                petC.style.left = px + 'px'; 
+                petC.style.top = py + 'px';
+                
+                // 滾動效果
+                if(py < floorY - 110) petImg.style.transform = `rotate(${vx * 2}deg)`;
                 else petImg.style.transform = `rotate(0deg)`;
             }
 
-            // 1. 足球物理 (像狗一樣玩)
+            // 2. 足球物理 (修正卡住問題)
             if(isBallActive && !isDraggingBall) {
-                bvy += 0.8; bx += bvx; by += bvy;
-                const floorY = window.innerHeight - 100;
-                // 地板反彈
-                if(by > floorY) { by = floorY; bvy = -bvy * 0.7; bvx *= 0.95; }
-                // 牆壁反彈
+                bvy += 0.8; // 重力
+                bx += bvx; by += bvy;
+                
+                // 地板碰撞 (修正後：在工具列上方反彈)
+                if(by > floorY) { 
+                    by = floorY; 
+                    bvy = -bvy * 0.7; // 彈力
+                    bvx *= 0.95; // 摩擦
+                }
+                
+                // 牆壁碰撞
                 if(bx < 30) { bx = 30; bvx = -bvx * 0.7; }
                 if(bx > window.innerWidth-30) { bx = window.innerWidth-30; bvx = -bvx * 0.7; }
                 
-                // 碰撞檢測 (寵物撞球)
-                const dx = bx - px;
-                const dy = by - py;
+                // 寵物與球的碰撞
+                const dx = bx - px; 
+                const dy = by - py; 
                 const dist = Math.hypot(dx, dy);
+                
+                // 如果距離夠近，踢球
                 if(dist < 150) {
-                    // 撞到了！
-                    if(!isJennifer) {
-                         // 普通模式：踢球
+                     // 撞擊力道
+                     if(!isJennifer) {
                          bvx = dx * 0.2; 
-                         bvy = -15; // 踢飛
-                         // 寵物追球 (簡單位移)
+                         bvy = -15; 
+                         // 寵物稍微追球
                          vx = dx * 0.05;
                          speak("Ball!");
                          playSound('pop');
-                    }
+                     } else {
+                         // Jennifer 模式踢得比較小力
+                         bvx = dx * 0.1;
+                     }
                 }
-                ballEl.style.left = bx + 'px'; ballEl.style.top = by + 'px';
+                
+                ballEl.style.left = bx + 'px'; 
+                ballEl.style.top = by + 'px';
                 ballEl.style.transform = `rotate(${bx*2}deg)`;
             }
 
             requestAnimationFrame(physicsLoop);
         }
 
-        // --- 足球系統 ---
+        // --- 足球拖曳邏輯 ---
         ballEl.addEventListener('mousedown', startDragBall);
         ballEl.addEventListener('touchstart', startDragBall, {passive:false});
 
         function spawnBall() {
             if(isBallActive) return;
-            isBallActive = true;
-            bx = window.innerWidth/2; by = 100;
-            ballEl.style.display = 'block';
+            isBallActive = true; 
+            bx = window.innerWidth/2; 
+            by = 100; // 從天而降
+            ballEl.style.display = 'block'; 
             playSound('pop');
         }
-        function removeBall() {
-            isBallActive = false;
-            ballEl.style.display = 'none';
+
+        function removeBall() { 
+            isBallActive = false; 
+            ballEl.style.display = 'none'; 
         }
 
-        function startDragBall(e) {
-            e.preventDefault(); e.stopPropagation();
-            isDraggingBall = true;
-            bvx = 0; bvy = 0;
+        function startDragBall(e) { 
+            e.preventDefault(); 
+            e.stopPropagation(); 
+            isDraggingBall = true; 
+            bvx = 0; bvy = 0; 
         }
 
-        // --- 屎系統 ---
+        // --- 大便系統 ---
         function spawnPoop() {
             if(isGameOver) return;
-            const p = document.createElement('div');
-            p.innerText = "💩"; p.className = 'poop';
-            const ry = window.innerHeight - 100 - Math.random()*80; 
+            const p = document.createElement('div'); 
+            p.innerText = "💩"; 
+            p.className = 'poop';
+            
+            // 隨機位置，但避免太低被工具列擋住
+            const ry = window.innerHeight - 150 - Math.random()*80; 
             const rx = Math.random() * (window.innerWidth - 80) + 40;
-            p.style.left = rx + 'px'; p.style.top = ry + 'px';
+            p.style.left = rx + 'px'; 
+            p.style.top = ry + 'px';
+            
             p.addEventListener('mousedown', (e) => startDragPoop(e, p));
             p.addEventListener('touchstart', (e) => startDragPoop(e, p), {passive:false});
-            document.body.appendChild(p);
-            poopCount++;
+            document.body.appendChild(p); 
+            poopCount++; 
             playSound('fart');
         }
 
         function startDragPoop(e, el) {
-            if(isGameOver) return;
+            if(isGameOver) return; 
             e.stopPropagation(); e.preventDefault();
-            draggingPoopEl = el;
+            draggingPoopEl = el; 
             poopClickTime = Date.now();
-            const cx = e.touches ? e.touches[0].clientX : e.clientX;
+            const cx = e.touches ? e.touches[0].clientX : e.clientX; 
             const cy = e.touches ? e.touches[0].clientY : e.clientY;
-            const rect = el.getBoundingClientRect();
-            poopOffX = cx - rect.left; poopOffY = cy - rect.top;
-            el.style.zIndex = 999; el.style.transform = "scale(1.3)";
+            const rect = el.getBoundingClientRect(); 
+            poopOffX = cx - rect.left; 
+            poopOffY = cy - rect.top;
+            el.style.zIndex = 999; 
+            el.style.transform = "scale(1.3)";
         }
 
-        // --- 統一移動 ---
+        // --- 統一輸入處理 (Mouse & Touch) ---
         function onMove(e) {
             if(isGameOver) return;
             const cx = e.touches ? e.touches[0].clientX : e.clientX;
             const cy = e.touches ? e.touches[0].clientY : e.clientY;
 
-            if(isDraggingPet) {
-                e.preventDefault();
-                vx = (cx - lastX) * 1.2; vy = (cy - lastY) * 1.2;
-                px = cx; py = cy; lastX = cx; lastY = cy;
-            } else if(isToolDragging) {
-                const toolEl = document.getElementById('active-tool');
-                toolEl.style.left = cx + 'px'; toolEl.style.top = cy + 'px';
-            } else if(draggingPoopEl) {
-                e.preventDefault();
-                draggingPoopEl.style.left = (cx - poopOffX) + 'px';
-                draggingPoopEl.style.top = (cy - poopOffY) + 'px';
-            } else if(isDraggingBall) {
-                e.preventDefault();
-                bvx = (cx - bx)*0.5; bvy = (cy - by)*0.5;
-                bx = cx; by = cy;
-                ballEl.style.left = bx + 'px'; ballEl.style.top = by + 'px';
+            if(isDraggingPet) { 
+                e.preventDefault(); 
+                vx = (cx - lastX) * 1.2; 
+                vy = (cy - lastY) * 1.2; 
+                px = cx; py = cy; 
+                lastX = cx; lastY = cy; 
+            } 
+            else if(isToolDragging) { 
+                const t = document.getElementById('active-tool'); 
+                t.style.left = cx + 'px'; 
+                t.style.top = cy + 'px'; 
+            } 
+            else if(draggingPoopEl) { 
+                e.preventDefault(); 
+                draggingPoopEl.style.left = (cx - poopOffX) + 'px'; 
+                draggingPoopEl.style.top = (cy - poopOffY) + 'px'; 
+            } 
+            else if(isDraggingBall) { 
+                e.preventDefault(); 
+                bvx = (cx - bx)*0.5; 
+                bvy = (cy - by)*0.5; 
+                bx = cx; by = cy; 
+                ballEl.style.left = bx + 'px'; 
+                ballEl.style.top = by + 'px'; 
             }
         }
 
         function onUp(e) {
             if(isGameOver) return;
-            const cx = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
+            const cx = e.changedTouches ? e.changedTouches[0].clientX : e.clientX; 
             const cy = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
 
+            // 放開寵物
             if(isDraggingPet) { 
-                isDraggingPet = false; petC.style.cursor = 'grab'; petImg.style.transform = 'scale(1)'; 
+                isDraggingPet = false; 
+                petC.style.cursor = 'grab'; 
+                petImg.style.transform = 'scale(1)'; 
                 if(Math.abs(vx) > 10) speak(getRandomText('drop')); 
             }
+
+            // 放開球
             if(isDraggingBall) { isDraggingBall = false; }
-            
-            if(isToolDragging) {
-                isToolDragging = false;
-                document.getElementById('active-tool').style.display = 'none';
-                if(checkHit(cx, cy)) applyTool(currentTool);
-                else {
-                    // 如果沒丟中，若是球就生成實體
-                    if(currentTool === 'ball') spawnBall(); 
+
+            // 放開道具
+            if(isToolDragging) { 
+                isToolDragging = false; 
+                document.getElementById('active-tool').style.display = 'none'; 
+                if(checkHit(cx, cy)) {
+                    applyTool(currentTool); 
+                } else if(currentTool === 'ball') {
+                    spawnBall(); // 沒丟中寵物也生成球
                 }
-                currentTool = null;
+                currentTool = null; 
             }
 
-            if(draggingPoopEl) {
-                const el = draggingPoopEl; draggingPoopEl = null;
-                el.style.zIndex = 100; el.style.transform = "scale(1)";
-                const timeDiff = Date.now() - poopClickTime;
-                if(timeDiff < 200) cleanPoop(el); 
-                else {
-                    if(checkHit(cx, cy)) forceFeedPoop(el); 
-                    else fallPoop(el); 
-                }
-            }
-        }
-
-        function checkHit(x, y) {
-            const rect = petC.getBoundingClientRect();
-            return (x > rect.left && x < rect.right && y > rect.top && y < rect.bottom);
-        }
-
-        // --- 結局與效果 ---
-        function forceFeedPoop(el) {
-            el.remove(); poopCount = Math.max(0, poopCount-1);
-            if(isJennifer) {
-                isGameOver = true;
-                petImg.classList.add('sick'); speak(getRandomText('eat_poop_anger')); playSound('bad');
-                setTimeout(() => {
-                   petImg.classList.remove('sick'); petImg.classList.add('attack'); playSound('scream');
-                   setTimeout(() => {
-                        document.getElementById('game-over-screen').style.display = 'flex';
-                        document.querySelector('.dock').style.display = 'none';
-                        document.getElementById('status-panel').style.display = 'none';
-                   }, 400);
-                }, 1500);
-            } else {
-                isSad = true; petImg.classList.add('sad'); speak(getRandomText('eat_poop_sad')); playSound('bad');
-                stats.clean = 0; stats.hunger = 100; updateBars();
+            // 放開大便
+            if(draggingPoopEl) { 
+                const el = draggingPoopEl; 
+                draggingPoopEl = null; 
+                el.style.zIndex = 100; 
+                el.style.transform = "scale(1)"; 
+                if(Date.now() - poopClickTime < 200) {
+                    cleanPoop(el); // 點擊清除
+                } else { 
+                    if(checkHit(cx, cy)) forceFeedPoop(el); // 餵食
+                    else fallPoop(el); // 掉落
+                } 
             }
         }
 
-        function cleanPoop(el) {
-            playSound('clean');
-            el.style.transition = "0.5s"; el.style.transform = "translateY(-50px) scale(0)";
-            setTimeout(() => el.remove(), 500);
-            poopCount = Math.max(0, poopCount-1);
-            stats.clean += 10;
-            speak(getRandomText('clean_poop'));
-            updateBars();
+        function checkHit(x, y) { 
+            const rect = petC.getBoundingClientRect(); 
+            return (x > rect.left && x < rect.right && y > rect.top && y < rect.bottom); 
         }
 
-        function fallPoop(el) {
-            el.style.transition = "top 0.5s ease-in";
-            el.style.top = (window.innerHeight - 150) + 'px';
-            setTimeout(() => el.style.transition = "none", 500);
-        }
-
+        // --- 道具互動效果 ---
         function spawnTool(type, e) {
-            if(isGameOver) return;
+            if(isGameOver) return; 
             if(e) e.preventDefault();
-            currentTool = type; isToolDragging = true;
-            const t = document.getElementById('active-tool');
+            currentTool = type; 
+            isToolDragging = true;
+            const t = document.getElementById('active-tool'); 
             t.innerText = { food:'🍔', soap:'🧼', bed:'🛏️', phone:'📱', ball:'⚽', book:'📚' }[type];
-            t.style.display = 'block';
+            t.style.display = 'block'; 
             playSound('pop');
         }
 
         function applyTool(type) {
-            if(isSad && type === 'food' && !isJennifer) {
-                isSad = false; petImg.classList.remove('sad'); speak("I forgive you!");
+            // 解除悲傷
+            if(isSad && type === 'food' && !isJennifer) { 
+                isSad = false; 
+                petImg.classList.remove('sad'); 
+                speak("I forgive you!"); 
             }
 
             if(isJennifer) {
+                // --- Jennifer 模式反應 ---
                 if(type==='food') speak(getRandomText('food'));
                 else if(type==='soap') { speak(getRandomText('soap')); playSound('bad'); vx = (Math.random()-0.5)*20; vy = -10; }
                 else if(type==='phone') { 
-                    // 2. 沒收手機
-                    speak(getRandomText('phone')); playSound('bad'); 
-                    document.getElementById('btn-phone').classList.add('hidden'); // 消失
+                    // 沒收手機 & 特定語音
+                    speak("Put your electronic devices in your backpack!"); 
+                    playSound('bad'); 
+                    document.getElementById('btn-phone').classList.add('hidden'); 
                 }
                 else if(type==='bed') { speak(getRandomText('bed')); }
                 else if(type==='ball') { speak(getRandomText('ball')); playSound('bad'); removeBall(); } 
                 else if(type==='book') { speak(getRandomText('book')); createParticles(px, py, '✨'); }
             } else {
-                if(type==='food') { stats.hunger=Math.min(100, stats.hunger+30); speak(getRandomText('food')); playSound('eat'); }
-                else if(type==='soap') { stats.clean=100; speak(getRandomText('soap')); playSound('bubble'); createBubbleEffects(px, py); document.querySelectorAll('.poop').forEach(e=>e.remove()); poopCount=0; }
+                // --- 普通模式反應 ---
+                if(type==='food') { 
+                    stats.hunger=Math.min(100, stats.hunger+30); 
+                    speak(getRandomText('food')); 
+                    playSound('eat'); 
+                }
+                else if(type==='soap') { 
+                    stats.clean=100; 
+                    speak(getRandomText('soap')); 
+                    playSound('bubble'); 
+                    createBubbleEffects(px, py); 
+                    document.querySelectorAll('.poop').forEach(e=>e.remove()); 
+                    poopCount=0; 
+                }
                 else if(type==='phone') { takePhoto(); }
                 else if(type==='bed') { speak(getRandomText('bed')); }
-                else if(type==='ball') { spawnBall(); speak(getRandomText('ball')); } // 普通模式生球
+                else if(type==='ball') { spawnBall(); speak(getRandomText('ball')); } 
                 else if(type==='book') { speak(getRandomText('book')); playSound('bad'); }
             }
             updateBars();
         }
 
-        function takePhoto() {
-            playSound('shutter'); speak(getRandomText('phone'));
-            const flash = document.getElementById('flash-overlay');
-            flash.style.opacity = 1; setTimeout(() => flash.style.opacity = 0, 100);
+        // --- 結局與特殊功能 ---
+        function forceFeedPoop(el) { 
+            el.remove(); 
+            poopCount = Math.max(0, poopCount-1); 
             
-            const canvas = document.createElement('canvas'); canvas.width = 400; canvas.height = 400;
-            const ctx = canvas.getContext('2d');
-            ctx.fillStyle = '#fce4ec'; ctx.fillRect(0,0,400,400);
-            ctx.fillStyle = '#333'; ctx.font = '20px Fredoka';
-            ctx.fillText("My Pet " + playerName, 20, 30);
-            const img = document.getElementById('pet-img');
-            try { ctx.drawImage(img, 50, 50, 300, 300); } catch(e) {}
-            const link = document.createElement('a');
-            link.download = 'pet_photo.png'; link.href = canvas.toDataURL(); link.click();
+            if(isJennifer) { 
+                // Jennifer 發怒結局
+                isGameOver = true; 
+                petImg.classList.add('sick'); 
+                speak(getRandomText('eat_poop_anger')); 
+                playSound('bad'); 
+                setTimeout(() => { 
+                    petImg.classList.remove('sick'); 
+                    petImg.classList.add('attack'); 
+                    playSound('scream'); 
+                    setTimeout(() => { 
+                        document.getElementById('game-over-screen').style.display = 'flex'; 
+                        document.querySelector('.dock').style.display = 'none'; 
+                        document.getElementById('status-panel').style.display = 'none'; 
+                    }, 400); 
+                }, 1500); 
+            } else { 
+                // 普通模式變悲傷
+                isSad = true; 
+                petImg.classList.add('sad'); 
+                speak(getRandomText('eat_poop_sad')); 
+                playSound('bad'); 
+                stats.clean = 0; 
+                stats.hunger = 100; 
+                updateBars(); 
+            } 
         }
 
-        function createBubbleEffects(x, y) {
-            for(let i=0; i<10; i++) {
-                const b = document.createElement('div'); b.className = 'bubble-particle';
-                const size = Math.random()*20 + 10;
-                b.style.width = size+'px'; b.style.height = size+'px';
-                b.style.left = (x + (Math.random()-0.5)*100) + 'px';
-                b.style.top = (y + (Math.random()-0.5)*100) + 'px';
-                document.getElementById('stage').appendChild(b);
-                setTimeout(()=>b.remove(), 1000);
-            }
-        }
-        
-        function createParticles(x, y, char) {
-            for(let i=0; i<3; i++) {
-                const p = document.createElement('div'); p.innerText = char;
-                p.style.position = 'absolute'; p.style.left = x + 'px'; p.style.top = y + 'px';
-                p.style.fontSize = '30px'; p.style.pointerEvents = 'none'; p.style.transition = '1s'; p.style.zIndex = 100;
-                document.getElementById('stage').appendChild(p);
-                setTimeout(() => { p.style.transform = `translate(${(Math.random()-0.5)*100}px, -100px) scale(0)`; p.style.opacity = 0; }, 50);
-                setTimeout(() => p.remove(), 1000);
-            }
+        function cleanPoop(el) { 
+            playSound('clean'); 
+            el.style.transition = "0.5s"; 
+            el.style.transform = "translateY(-50px) scale(0)"; 
+            setTimeout(() => el.remove(), 500); 
+            poopCount = Math.max(0, poopCount-1); 
+            stats.clean += 10; 
+            speak(getRandomText('clean_poop')); 
+            updateBars(); 
         }
 
-        function survivalLoop() {
-            if(isGameOver) return;
-            stats.hunger = Math.max(0, stats.hunger-1); stats.clean = Math.max(0, stats.clean-0.5); stats.energy = Math.max(0, stats.energy-0.5);
-            if(stats.hunger > 50 && Math.random()<0.08) spawnPoop();
-            if(stats.clean < 40 && !isSad) {
-                petImg.classList.add('dirty');
-                const fz = document.getElementById('flies-zone');
-                if(fz.innerHTML === '') fz.innerHTML = '<div class="fly" style="top:-30px">🪰</div><div class="fly" style="left:-30px; animation-delay:0.5s">🪰</div>';
-            } else {
-                petImg.classList.remove('dirty');
-                document.getElementById('flies-zone').innerHTML = '';
-            }
-            updateBars();
+        function fallPoop(el) { 
+            // 掉落時也要考慮工具列高度
+            el.style.transition = "top 0.5s ease-in"; 
+            el.style.top = (window.innerHeight - 150) + 'px'; 
+            setTimeout(() => el.style.transition = "none", 500); 
         }
 
-        function updateBars() {
-            document.getElementById('bar-hunger').style.width = stats.hunger+'%';
-            document.getElementById('bar-clean').style.width = stats.clean+'%';
-            document.getElementById('bar-energy').style.width = stats.energy+'%';
+        function takePhoto() { 
+            playSound('shutter'); 
+            speak(getRandomText('phone')); 
+            const flash = document.getElementById('flash-overlay'); 
+            flash.style.opacity = 1; 
+            setTimeout(() => flash.style.opacity = 0, 100); 
+            
+            const canvas = document.createElement('canvas'); 
+            canvas.width = 400; canvas.height = 400; 
+            const ctx = canvas.getContext('2d'); 
+            ctx.fillStyle = '#fce4ec'; ctx.fillRect(0,0,400,400); 
+            ctx.fillStyle = '#333'; ctx.font = '20px Fredoka'; 
+            ctx.fillText("My Pet " + playerName, 20, 30); 
+            const img = document.getElementById('pet-img'); 
+            try { ctx.drawImage(img, 50, 50, 300, 300); } catch(e) {} 
+            const link = document.createElement('a'); 
+            link.download = 'pet_photo.png'; 
+            link.href = canvas.toDataURL(); 
+            link.click(); 
         }
 
-        // 4. 聲音優化 (Pitch & Rate)
+        function createBubbleEffects(x, y) { 
+            for(let i=0; i<10; i++) { 
+                const b = document.createElement('div'); 
+                b.className = 'bubble-particle'; 
+                const size = Math.random()*20 + 10; 
+                b.style.width = size+'px'; b.style.height = size+'px'; 
+                b.style.left = (x + (Math.random()-0.5)*100) + 'px'; 
+                b.style.top = (y + (Math.random()-0.5)*100) + 'px'; 
+                document.getElementById('stage').appendChild(b); 
+                setTimeout(()=>b.remove(), 1000); 
+            } 
+        }
+
+        function createParticles(x, y, char) { 
+            for(let i=0; i<3; i++) { 
+                const p = document.createElement('div'); 
+                p.innerText = char; 
+                p.style.position = 'absolute'; 
+                p.style.left = x + 'px'; p.style.top = y + 'px'; 
+                p.style.fontSize = '30px'; 
+                p.style.pointerEvents = 'none'; 
+                p.style.transition = '1s'; 
+                p.style.zIndex = 100; 
+                document.getElementById('stage').appendChild(p); 
+                setTimeout(() => { p.style.transform = `translate(${(Math.random()-0.5)*100}px, -100px) scale(0)`; p.style.opacity = 0; }, 50); 
+                setTimeout(() => p.remove(), 1000); 
+            } 
+        }
+
+        function survivalLoop() { 
+            if(isGameOver) return; 
+            stats.hunger = Math.max(0, stats.hunger-1); 
+            stats.clean = Math.max(0, stats.clean-0.5); 
+            stats.energy = Math.max(0, stats.energy-0.5); 
+            
+            if(stats.hunger > 50 && Math.random()<0.08) spawnPoop(); 
+            
+            if(stats.clean < 40 && !isSad) { 
+                petImg.classList.add('dirty'); 
+                const fz = document.getElementById('flies-zone'); 
+                if(fz.innerHTML === '') fz.innerHTML = '<div class="fly" style="top:-30px">🪰</div><div class="fly" style="left:-30px; animation-delay:0.5s">🪰</div>'; 
+            } else { 
+                petImg.classList.remove('dirty'); 
+                document.getElementById('flies-zone').innerHTML = ''; 
+            } 
+            updateBars(); 
+        }
+
+        function updateBars() { 
+            document.getElementById('bar-hunger').style.width = stats.hunger+'%'; 
+            document.getElementById('bar-clean').style.width = stats.clean+'%'; 
+            document.getElementById('bar-energy').style.width = stats.energy+'%'; 
+        }
+
+        // --- 語音合成系統 ---
         function speak(text) {
-            const b = document.getElementById('bubble');
-            b.innerText = text; b.style.transform = "translateX(-50%) scale(1)";
+            const b = document.getElementById('bubble'); 
+            b.innerText = text; 
+            b.style.transform = "translateX(-50%) scale(1)"; 
             b.style.color = isJennifer ? "red" : "black";
             
             window.speechSynthesis.cancel();
             const u = new SpeechSynthesisUtterance(text);
             u.lang = isJennifer ? 'en-US' : 'zh-HK';
             
-            if(isJennifer) {
-                u.pitch = 1.2; // 尖酸刻薄
-                u.rate = 1.3;  // 咄咄逼人
-            } else {
-                u.pitch = 1.6; // 可愛高音
-                u.rate = 1.2;  // 輕快
+            // 語調設定
+            if(isJennifer) { 
+                u.pitch = 1.2; 
+                u.rate = 1.3; 
+            } else { 
+                u.pitch = 1.6; 
+                u.rate = 1.2; 
             }
+            
             window.speechSynthesis.speak(u);
-            clearTimeout(speakTimeout);
+            
+            clearTimeout(speakTimeout); 
             speakTimeout = setTimeout(()=>b.style.transform="translateX(-50%) scale(0)", 4000); 
         }
         
-        function changeScene() {
-            if(isGameOver) return;
+        function changeScene() { 
+            if(isGameOver) return; 
             if(isJennifer) speak("Fine."); 
-            sceneIdx = (sceneIdx+1)%scenes.length;
-            document.getElementById('stage').className = scenes[sceneIdx];
+            sceneIdx = (sceneIdx+1)%scenes.length; 
+            document.getElementById('stage').className = scenes[sceneIdx]; 
         }
 
+        // --- 音效系統 (展開以便閱讀) ---
         function playSound(t) {
-            const osc = audioCtx.createOscillator(); const g = audioCtx.createGain();
-            osc.connect(g); g.connect(audioCtx.destination);
+            const osc = audioCtx.createOscillator(); 
+            const g = audioCtx.createGain(); 
+            osc.connect(g); 
+            g.connect(audioCtx.destination); 
             const now = audioCtx.currentTime;
             
-            if(t==='pop') { osc.frequency.setValueAtTime(600,now); osc.frequency.exponentialRampToValueAtTime(1200,now+0.1); g.gain.setValueAtTime(0.1,now); g.gain.linearRampToValueAtTime(0,now+0.1); osc.start(now); osc.stop(now+0.1); }
-            else if(t==='bubble') { osc.type='triangle'; osc.frequency.setValueAtTime(300,now); osc.frequency.linearRampToValueAtTime(600,now+0.1); g.gain.setValueAtTime(0.1,now); g.gain.linearRampToValueAtTime(0,now+0.2); osc.start(now); osc.stop(now+0.2); }
-            else if(t==='shutter') { osc.type='square'; osc.frequency.setValueAtTime(1000,now); g.gain.setValueAtTime(0.1,now); g.gain.linearRampToValueAtTime(0,now+0.05); osc.start(now); osc.stop(now+0.05); }
-            else if(t==='fart') { osc.type='sawtooth'; osc.frequency.setValueAtTime(150,now); osc.frequency.linearRampToValueAtTime(50,now+0.4); g.gain.setValueAtTime(0.2,now); g.gain.linearRampToValueAtTime(0,now+0.4); osc.start(now); osc.stop(now+0.4); }
-            else if(t==='scream') { osc.type='sawtooth'; osc.frequency.setValueAtTime(400,now); osc.frequency.linearRampToValueAtTime(1500,now+0.2); osc.frequency.linearRampToValueAtTime(100,now+0.5); g.gain.setValueAtTime(0.5,now); g.gain.linearRampToValueAtTime(0,now+0.5); osc.start(now); osc.stop(now+0.5); }
-            else if(t==='bad') { osc.type='square'; osc.frequency.setValueAtTime(150,now); osc.frequency.linearRampToValueAtTime(100,now+0.3); g.gain.setValueAtTime(0.2,now); g.gain.linearRampToValueAtTime(0,now+0.3); osc.start(now); osc.stop(now+0.3); }
-            else if(t==='eat') { osc.frequency.setValueAtTime(300,now); osc.frequency.linearRampToValueAtTime(200,now+0.1); g.gain.setValueAtTime(0.1,now); g.gain.linearRampToValueAtTime(0,now+0.1); osc.start(now); osc.stop(now+0.1); }
+            if(t==='pop') { 
+                osc.frequency.setValueAtTime(600,now); 
+                osc.frequency.exponentialRampToValueAtTime(1200,now+0.1); 
+                g.gain.setValueAtTime(0.1,now); 
+                g.gain.linearRampToValueAtTime(0,now+0.1); 
+                osc.start(now); osc.stop(now+0.1); 
+            }
+            else if(t==='bubble') { 
+                osc.type='triangle'; 
+                osc.frequency.setValueAtTime(300,now); 
+                osc.frequency.linearRampToValueAtTime(600,now+0.1); 
+                g.gain.setValueAtTime(0.1,now); 
+                g.gain.linearRampToValueAtTime(0,now+0.2); 
+                osc.start(now); osc.stop(now+0.2); 
+            }
+            else if(t==='shutter') { 
+                osc.type='square'; 
+                osc.frequency.setValueAtTime(1000,now); 
+                g.gain.setValueAtTime(0.1,now); 
+                g.gain.linearRampToValueAtTime(0,now+0.05); 
+                osc.start(now); osc.stop(now+0.05); 
+            }
+            else if(t==='fart') { 
+                osc.type='sawtooth'; 
+                osc.frequency.setValueAtTime(150,now); 
+                osc.frequency.linearRampToValueAtTime(50,now+0.4); 
+                g.gain.setValueAtTime(0.2,now); 
+                g.gain.linearRampToValueAtTime(0,now+0.4); 
+                osc.start(now); osc.stop(now+0.4); 
+            }
+            else if(t==='scream') { 
+                osc.type='sawtooth'; 
+                osc.frequency.setValueAtTime(400,now); 
+                osc.frequency.linearRampToValueAtTime(1500,now+0.2); 
+                osc.frequency.linearRampToValueAtTime(100,now+0.5); 
+                g.gain.setValueAtTime(0.5,now); 
+                g.gain.linearRampToValueAtTime(0,now+0.5); 
+                osc.start(now); osc.stop(now+0.5); 
+            }
+            else if(t==='bad') { 
+                osc.type='square'; 
+                osc.frequency.setValueAtTime(150,now); 
+                osc.frequency.linearRampToValueAtTime(100,now+0.3); 
+                g.gain.setValueAtTime(0.2,now); 
+                g.gain.linearRampToValueAtTime(0,now+0.3); 
+                osc.start(now); osc.stop(now+0.3); 
+            }
+            else if(t==='eat') { 
+                osc.frequency.setValueAtTime(300,now); 
+                osc.frequency.linearRampToValueAtTime(200,now+0.1); 
+                g.gain.setValueAtTime(0.1,now); 
+                g.gain.linearRampToValueAtTime(0,now+0.1); 
+                osc.start(now); osc.stop(now+0.1); 
+            }
+            else if(t==='clean') { 
+                osc.type='sine'; 
+                osc.frequency.setValueAtTime(400,now); 
+                osc.frequency.linearRampToValueAtTime(800,now+0.2); 
+                g.gain.setValueAtTime(0.1,now); 
+                g.gain.linearRampToValueAtTime(0,now+0.2); 
+                osc.start(now); osc.stop(now+0.2); 
+            }
         }
     </script>
 </body>
