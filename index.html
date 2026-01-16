@@ -20,7 +20,7 @@
             font-family: 'Poppins', sans-serif;
             background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
             background-size: 400% 400%;
-            animation: gradientBG 15s ease infinite; /* 背景流動動畫 */
+            animation: gradientBG 15s ease infinite;
             color: white;
             margin: 0;
             min-height: 100vh;
@@ -65,11 +65,15 @@
             padding: 0 20px 80px;
         }
 
-        /* --- 分類標題 --- */
+        /* --- 分類標題 (加強版) --- */
+        .section-header {
+            margin: 80px 0 30px; /* 增加間距 */
+            position: relative;
+        }
+
         .section-title {
             display: flex;
             align-items: center;
-            margin: 50px 0 30px;
             padding-bottom: 15px;
             border-bottom: 1px solid var(--glass-border);
         }
@@ -80,16 +84,20 @@
             margin: 0;
             color: var(--primary);
             text-shadow: var(--text-glow);
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         .section-badge {
             background: var(--secondary);
             font-size: 0.7em;
-            padding: 2px 10px;
+            padding: 4px 12px;
             border-radius: 20px;
             margin-left: 15px;
             font-weight: bold;
             box-shadow: 0 0 10px var(--secondary);
+            white-space: nowrap;
         }
 
         /* --- 網格佈局 --- */
@@ -99,7 +107,7 @@
             gap: 25px;
         }
 
-        /* --- 特大號 Hero 卡片 (給 AI Pet 用) --- */
+        /* --- New Release 輪播區塊 --- */
         .hero-card {
             background: linear-gradient(135deg, rgba(255, 0, 85, 0.2), rgba(0, 0, 0, 0.6));
             border: 1px solid rgba(255, 0, 85, 0.5);
@@ -115,6 +123,7 @@
             color: white;
             position: relative;
             overflow: hidden;
+            min-height: 200px; /* 防止切換時高度跳動 */
         }
 
         .hero-card:hover {
@@ -123,9 +132,18 @@
             border-color: #ff0055;
         }
 
-        .hero-content {
-            z-index: 2;
+        /* 輪播內容過場動畫 */
+        .hero-content, .hero-icon {
+            transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+            opacity: 1;
         }
+        
+        .hero-content.fade-out, .hero-icon.fade-out {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        .hero-content { z-index: 2; flex: 1; }
 
         .hero-title {
             font-family: 'Orbitron', sans-serif;
@@ -138,13 +156,26 @@
             font-size: 1.2em;
             color: #ddd;
             margin-top: 10px;
-            max-width: 500px;
+            max-width: 600px;
+            line-height: 1.5;
         }
 
         .hero-icon {
             font-size: 6em;
             animation: float 3s ease-in-out infinite;
             filter: drop-shadow(0 0 20px rgba(255,255,255,0.5));
+            margin-left: 20px;
+        }
+
+        /* 進度條 (顯示輪播時間) */
+        .progress-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 4px;
+            background: #ff0055;
+            width: 0%;
+            transition: width 0.1s linear;
         }
 
         /* --- 一般遊戲卡片 --- */
@@ -156,7 +187,7 @@
             text-align: center;
             text-decoration: none;
             color: white;
-            backdrop-filter: blur(10px); /* 毛玻璃核心 */
+            backdrop-filter: blur(10px);
             transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             position: relative;
             overflow: hidden;
@@ -165,7 +196,6 @@
             align-items: center;
         }
 
-        /* 卡片懸停特效 */
         .card:hover {
             transform: translateY(-10px) scale(1.02);
             background: rgba(255, 255, 255, 0.1);
@@ -173,9 +203,7 @@
             box-shadow: 0 0 20px rgba(0, 210, 255, 0.4), inset 0 0 20px rgba(0, 210, 255, 0.1);
         }
 
-        .card:hover .icon {
-            transform: scale(1.2) rotate(5deg);
-        }
+        .card:hover .icon { transform: scale(1.2) rotate(5deg); }
 
         .icon {
             font-size: 3.5em;
@@ -190,11 +218,7 @@
             margin-bottom: 5px;
         }
 
-        .tags {
-            display: flex;
-            gap: 5px;
-            margin-top: 10px;
-        }
+        .tags { display: flex; gap: 5px; margin-top: 10px; flex-wrap: wrap; justify-content: center; }
 
         .tag {
             font-size: 0.7em;
@@ -207,7 +231,7 @@
         .tag.hot { background: var(--accent); color: #0f0c29; font-weight: bold; }
         .tag.tech { background: var(--primary); color: #0f0c29; font-weight: bold; }
 
-        /* 裝飾用光斑 */
+        /* 裝飾光斑 */
         .glow-spot {
             position: fixed;
             width: 300px;
@@ -215,8 +239,7 @@
             background: radial-gradient(circle, rgba(0,210,255,0.2) 0%, rgba(0,0,0,0) 70%);
             pointer-events: none;
             z-index: -1;
-            top: 50%;
-            left: 50%;
+            top: 50%; left: 50%;
             transform: translate(-50%, -50%);
         }
 
@@ -225,11 +248,11 @@
             50% { transform: translateY(-15px); }
         }
 
-        /* 手機版調整 */
+        /* RWD */
         @media (max-width: 600px) {
             h1 { font-size: 2.5em; }
-            .hero-card { flex-direction: column; text-align: center; padding: 20px; }
-            .hero-icon { margin-top: 20px; }
+            .hero-card { flex-direction: column-reverse; text-align: center; padding: 20px; }
+            .hero-icon { margin-left: 0; margin-bottom: 20px; }
             .grid { grid-template-columns: 1fr 1fr; }
         }
     </style>
@@ -246,22 +269,25 @@
 
     <div class="container">
         
-        <a href="ai-pet.html" class="hero-card">
-            <div class="hero-content">
-                <div style="color: #ff0055; font-weight:bold; letter-spacing: 2px; margin-bottom: 5px;">NEW RELEASE</div>
-                <h2 class="hero-title">My AI Pet</h2>
-                <p class="hero-desc">上傳你的照片，AI 自動去背生成你的專屬電子寵物。支援餵食、撫摸與物理互動！</p>
-                <div class="tags">
-                    <span class="tag tech">AI 技術</span>
+        <a href="#" id="hero-link" class="hero-card">
+            <div class="hero-content" id="hero-content">
+                <div style="color: #ff0055; font-weight:bold; letter-spacing: 2px; margin-bottom: 5px;">🔥 TRENDING NOW</div>
+                <h2 class="hero-title" id="hero-title">My AI Pet</h2>
+                <p class="hero-desc" id="hero-desc">上傳你的照片,生成你的專屬電子寵物。支援餵食、撫摸與物理互動！</p>
+                <div class="tags" id="hero-tags" style="justify-content: flex-start;">
+                    <span class="tag tech">寵物</span>
                     <span class="tag new">養成</span>
                 </div>
             </div>
-            <div class="hero-icon">🐾</div>
+            <div class="hero-icon" id="hero-icon">🐾</div>
+            <div class="progress-bar" id="progress-bar"></div>
         </a>
 
-        <div class="section-title">
-            <h2>WebCam Motion</h2>
-            <div class="section-badge">需鏡頭</div>
+        <div class="section-header">
+            <div class="section-title">
+                <h2>📷 WebCam Motion</h2>
+                <div class="section-badge">需鏡頭</div>
+            </div>
         </div>
 
         <div class="grid">
@@ -296,8 +322,11 @@
             </a>
         </div>
 
-        <div class="section-title">
-            <h2>Arcade & Puzzle</h2>
+        <div class="section-header">
+            <div class="section-title">
+                <h2>🕹️ Arcade Action</h2>
+                <div class="section-badge" style="background: var(--accent); color: black;">爽快</div>
+            </div>
         </div>
 
         <div class="grid">
@@ -318,7 +347,16 @@
                 <div class="card-title">Orbit Rhythm</div>
                 <div class="tags"><span class="tag">節奏</span><span class="tag">反應</span></div>
             </a>
+        </div>
 
+        <div class="section-header">
+            <div class="section-title">
+                <h2>🧠 Classic & Brain</h2>
+                <div class="section-badge" style="background: #00d2ff;">益智</div>
+            </div>
+        </div>
+
+        <div class="grid">
             <a href="game3.html" class="card">
                 <div class="icon">💣</div>
                 <div class="card-title">踩地雷</div>
@@ -338,10 +376,83 @@
             </a>
         </div>
 
-        <div style="margin-top: 80px; text-align: center; color: rgba(255,255,255,0.3); font-size: 0.9em;">
+        <div style="margin-top: 80px; text-align: center; color: rgba(255,255,255,0.3); font-size: 0.9em; padding-bottom: 20px;">
             © 2024 NEXUS Game Station. Created with AI.
         </div>
 
     </div>
+
+    <script>
+        // 設定要輪播的遊戲列表
+        const highlights = [
+            {
+                title: "My AI Pet",
+                desc: "上傳你的照片,生成你的專屬電子寵物。支援餵食、撫摸與物理互動！",
+                icon: "🐾",
+                link: "ai-pet.html",
+                tags: ['<span class="tag tech">寵物</span>', '<span class="tag new">養成</span>']
+            },
+            {
+                title: "Neon Runner",
+                desc: "在霓虹賽博世界中極速狂奔，躲避障礙，挑戰你的反應極限！",
+                icon: "🏃‍♂️",
+                link: "neon-runner.html",
+                tags: ['<span class="tag new">跑酷</span>', '<span class="tag hot">熱門</span>']
+            },
+            {
+                title: "Face Dance",
+                desc: "使用你的表情來玩節奏遊戲，跟隨音樂做出指定表情！",
+                icon: "🕺",
+                link: "face-dance.html",
+                tags: ['<span class="tag">Pro</span>', '<span class="tag tech">AI</span>']
+            }
+        ];
+
+        let currentIndex = 0;
+        const duration = 5000; // 5秒切換一次
+        
+        const heroLink = document.getElementById('hero-link');
+        const contentEl = document.getElementById('hero-content');
+        const iconEl = document.getElementById('hero-icon');
+        const titleEl = document.getElementById('hero-title');
+        const descEl = document.getElementById('hero-desc');
+        const tagsEl = document.getElementById('hero-tags');
+        const barEl = document.getElementById('progress-bar');
+
+        function updateHero() {
+            // 1. 淡出
+            contentEl.classList.add('fade-out');
+            iconEl.classList.add('fade-out');
+            barEl.style.width = '0%';
+            barEl.style.transition = 'none'; // 重置進度條
+
+            setTimeout(() => {
+                // 2. 切換數據
+                const game = highlights[currentIndex];
+                titleEl.innerText = game.title;
+                descEl.innerText = game.desc;
+                iconEl.innerText = game.icon;
+                heroLink.href = game.link;
+                tagsEl.innerHTML = game.tags.join('');
+
+                // 3. 淡入
+                contentEl.classList.remove('fade-out');
+                iconEl.classList.remove('fade-out');
+                
+                // 4. 開始進度條動畫
+                setTimeout(() => {
+                    barEl.style.transition = `width ${duration}ms linear`;
+                    barEl.style.width = '100%';
+                }, 50);
+
+                // 準備下一次索引
+                currentIndex = (currentIndex + 1) % highlights.length;
+            }, 500); // 等待淡出動畫完成
+        }
+
+        // 初始化
+        updateHero();
+        setInterval(updateHero, duration + 500); // 加上過場時間
+    </script>
 </body>
 </html>
