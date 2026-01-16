@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>JENNIFER: THE ENDING</title>
-    <script src="https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.3.0/dist/imgly-background-removal.min.js"></script>
+    <title>JENNIFER</title> <script src="https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.3.0/dist/imgly-background-removal.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600&family=Noto+Sans+TC:wght@700&display=swap" rel="stylesheet">
     
     <style>
@@ -17,12 +16,16 @@
         .bg-park { background: linear-gradient(to bottom, #87CEEB 0%, #90EE90 85%, #228B22 85%); }
         .bg-class { background: linear-gradient(to bottom, #2F4F4F 0%, #3e2723 85%, #1a100c 85%); box-shadow: inset 0 0 100px black; }
 
+        /* 閃光燈特效 (拍照用) */
+        #flash-overlay {
+            position: fixed; inset: 0; background: white; opacity: 0; pointer-events: none; z-index: 900; transition: opacity 0.1s;
+        }
+
         /* 狀態列 */
         #status-panel {
             position: absolute; top: 15px; left: 15px; width: 140px;
-            display: flex; flex-direction: column; gap: 8px; z-index: 30; pointer-events: none; /* 讓點擊穿透 */
+            display: flex; flex-direction: column; gap: 8px; z-index: 30; pointer-events: none; 
         }
-        /* 關鍵修正：讓裡面的按鈕可以被點擊 */
         #status-panel button { pointer-events: auto; }
         
         .bar-box {
@@ -42,19 +45,36 @@
         #pet-img {
             width: 100%; height: 100%; object-fit: cover; border-radius: 50%;
             border: 5px solid rgba(255,255,255,0.5); pointer-events: none;
-            transition: transform 0.2s, filter 0.5s; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.5));
+            transition: transform 0.1s; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.5));
         }
+        
         /* 狀態樣式 */
         .dirty { filter: sepia(0.8) brightness(0.8) !important; border-color: #5d4037 !important; }
-        .sad { filter: grayscale(1) brightness(0.7) contrast(1.2) !important; } /* 傷心黑白 */
-        .attack { transition: 0.2s !important; transform: scale(20) !important; } /* 攻擊放大 */
+        .sad { filter: grayscale(1) brightness(0.7) contrast(1.2) !important; } 
+        .sick { filter: hue-rotate(90deg) !important; }
+        .attack { transition: transform 0.2s cubic-bezier(0.1, 0.7, 1.0, 0.1) !important; transform: scale(30) !important; } /* 恐怖衝刺 */
 
-        /* 屎 (可拖曳) */
+        /* 7. 軌跡特效 */
+        .trail-dot {
+            position: absolute; width: 15px; height: 15px; border-radius: 50%;
+            background: rgba(255, 255, 255, 0.4); pointer-events: none; z-index: 5;
+            animation: fadeOut 0.8s forwards;
+        }
+        @keyframes fadeOut { to { transform: scale(0); opacity: 0; } }
+
+        /* 8. 泡泡特效 */
+        .bubble-particle {
+            position: absolute; border: 1px solid rgba(255,255,255,0.8); background: rgba(255,255,255,0.2);
+            border-radius: 50%; pointer-events: none; z-index: 20;
+            animation: bubbleUp 1s forwards;
+        }
+        @keyframes bubbleUp { 0%{transform:translateY(0) scale(1); opacity:1;} 100%{transform:translateY(-100px) scale(0); opacity:0;} }
+
+        /* 屎 */
         .poop { 
             position: absolute; font-size: 45px; z-index: 100; cursor: grab;
             animation: bounce 1s infinite alternate; 
-            filter: drop-shadow(0 5px 5px rgba(0,0,0,0.5));
-            user-select: none;
+            filter: drop-shadow(0 5px 5px rgba(0,0,0,0.5)); user-select: none;
         }
         .poop:active { cursor: grabbing; transform: scale(1.2); }
         @keyframes bounce { from{transform:translateY(0);} to{transform:translateY(-5px);} }
@@ -63,7 +83,7 @@
         .fly { position: absolute; font-size: 20px; animation: fly 0.5s infinite linear; z-index: 15; pointer-events: none; }
         @keyframes fly { 0%{transform:translate(0,0)} 25%{transform:translate(5px,-5px)} 50%{transform:translate(0,-10px)} 75%{transform:translate(-5px,-5px)} 100%{transform:translate(0,0)} }
 
-        /* 道具拖曳層 */
+        /* 道具層 */
         #active-tool {
             position: absolute; font-size: 80px; pointer-events: none; z-index: 200;
             display: none; transform: translate(-50%, -50%); filter: drop-shadow(0 5px 10px rgba(0,0,0,0.3));
@@ -83,21 +103,23 @@
         }
         .dock-btn:active { transform: scale(0.9); }
 
-        /* 氣泡 */
+        /* 10. 氣泡 (停留時間改長) */
         #bubble {
-            position: absolute; top: -110px; left: 50%; transform: translateX(-50%) scale(0);
+            position: absolute; top: -120px; left: 50%; transform: translateX(-50%) scale(0);
             background: white; padding: 12px 24px; border-radius: 25px; font-weight: bold; white-space: nowrap;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.3); pointer-events: none; transition: 0.2s; z-index: 250;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3); pointer-events: none; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 250;
+            max-width: 250px; white-space: normal; text-align: center; line-height: 1.2;
         }
         #bubble::after { content:''; position: absolute; bottom:-10px; left:50%; transform:translateX(-50%); border:10px solid transparent; border-top-color:white; }
 
-        /* GAME OVER 畫面 */
+        /* GAME OVER */
         #game-over-screen {
             position: fixed; inset: 0; background: black; z-index: 1000;
             display: none; flex-direction: column; justify-content: center; align-items: center;
             color: red; font-family: 'Noto Sans TC', sans-serif;
         }
-        .go-text { font-size: 60px; font-weight: 900; letter-spacing: 5px; text-shadow: 0 0 10px red; }
+        .go-text { font-size: 60px; font-weight: 900; letter-spacing: 5px; text-shadow: 0 0 20px red; animation: pulse 1s infinite; }
+        @keyframes pulse { 0%{opacity:0.8} 50%{opacity:1} 100%{opacity:0.8} }
         .restart-btn { margin-top: 20px; padding: 10px 30px; border: 2px solid white; background: transparent; color: white; font-size: 20px; cursor: pointer; }
 
         /* 設定頁 */
@@ -109,31 +131,33 @@
 </head>
 <body>
 
+    <div id="flash-overlay"></div>
+
     <div id="game-over-screen">
         <div class="go-text">YOU DIED</div>
-        <div style="color: white; margin-top: 10px;">SHE DID NOT LIKE THAT.</div>
+        <div style="color: white; margin-top: 10px;">JENNIFER HATES THAT.</div>
         <button class="restart-btn" onclick="location.reload()">TRY AGAIN</button>
     </div>
 
     <div id="setup">
-        <h1 style="color:white; font-family:'Fredoka'">POOP KO v15</h1>
+        <h1 style="color:white; font-family:'Fredoka'">JENNIFER v16</h1>
         
         <div class="setup-card" onclick="document.getElementById('file').click()">
             <img id="prev-img" style="width:100px; height:100px; border-radius:50%; object-fit:cover; display:none; margin:0 auto; border: 3px solid white;">
             <div id="cam-txt" style="font-size:40px; line-height:100px;">📷</div>
-            <div style="font-size:12px; color:#aaa;">上傳照片</div>
+            <div style="font-size:12px; color:#aaa;">Upload Face</div>
         </div>
         <input type="file" id="file" hidden accept="image/*">
 
         <div class="setup-card">
-            <label>Name</label>
-            <input type="text" id="p-name" value="Tom" placeholder="Student Name">
+            <label>Student Name</label>
+            <input type="text" id="p-name" value="Tom" placeholder="Name">
         </div>
 
         <div class="setup-card" style="display:flex; justify-content:space-between; align-items:center;">
             <div style="text-align:left;">
                 <strong style="color:var(--danger)">JENNIFER MODE</strong>
-                <div style="font-size:10px; color:#aaa">Don't feed her poop.</div>
+                <div style="font-size:10px; color:#aaa">Strict Teacher (English)</div>
             </div>
             <input type="checkbox" id="mode-sw" style="width:25px; height:25px;">
         </div>
@@ -175,24 +199,54 @@
     <script>
         // --- 變數 ---
         let isJennifer = false;
-        let isSad = false; // 普通模式傷心狀態
+        let isSad = false; 
         let isGameOver = false;
-
         let playerName = "Tom";
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         
         let stats = { hunger: 80, clean: 80, energy: 80 };
         let poopCount = 0;
-        
-        // 物理
         let px = window.innerWidth/2, py = window.innerHeight - 250;
         let vx = 0, vy = 0;
         let isDraggingPet = false, lastX, lastY;
         let currentTool = null, isToolDragging = false;
         let draggingPoopEl = null, poopOffX = 0, poopOffY = 0, poopClickTime = 0;
+        let speakTimeout;
 
         const scenes = ['bg-livingroom', 'bg-park', 'bg-class'];
         let sceneIdx = 0;
+
+        // --- 3 & 4. 對話庫 (Expanded Dialogues) ---
+        const dialogues = {
+            normal: {
+                touch: ["Hehe!", "That tickles!", "I love you!", "Yay!", "More!", "Hahaha!", "You're my friend!"],
+                drag: ["Weeee!", "Flying!", "Higher!", "Whoa!", "I believe I can fly!"],
+                drop: ["Ouch!", "My bum!", "That hurt!", "Be careful!", "Again!"],
+                food: ["Yummy!", "Delicious!", "My favorite!", "Nom nom!", "Tasty!"],
+                soap: ["So fresh!", "Bubbles!", "Clean clean!", "Smells good!", "Sparkling!"],
+                bed: ["Good night...", "Sleepy...", "Zzz...", "Sweet dreams...", "Nap time..."],
+                phone: ["Say cheese!", "Selfie!", "Look at me!", "Picture time!", "Click!"],
+                clean_poop: ["Thanks!", "Eww, it stinks!", "Bye bye poop!", "Much better!", "Phew!"],
+                eat_poop_sad: ["Why...?", "Gross...", "I thought you loved me...", "Tastes bad...", "Bleh..."]
+            },
+            jennifer: {
+                touch: ["Don't touch me!", "Do you mind?", "Personal space!", "I am your teacher, not your pet!", "Hands off!", "Detention!"],
+                drag: ["UNHAND ME!", "Put me down immediately!", "This is inappropriate behavior!", "I will call your parents!", "STOP IT!"],
+                drop: ["How dare you!", "Sit properly!", "That is a demerit!", "You are in big trouble!", "Behave yourself!"],
+                food: ["No eating in class!", "Put that away!", "Is that gum?", "Did you bring enough for everyone?", "Not now!"],
+                soap: ["I prefer my natural scent!", "Water is for the weak!", "Get that away from me!", "I don't need a bath!", "Leave me alone!"], // 9. 拒絕洗澡
+                bed: ["No sleeping in my class!", "Wake up!", "Pay attention!", "Eyes on the board!", "Stand up!"],
+                phone: ["No phones allowed!", "Confiscated!", "Give me that!", "Are you texting?", "Focus on the lesson!"], // 2. 手機罵人
+                clean_poop: ["Finally.", "Wash your hands.", "Disgusting habit.", "About time.", "Don't make a mess."],
+                eat_poop_anger: ["HOW DARE YOU!", "VILE CHILD!", "ABSOLUTELY NOT!", "YOU ARE EXPELLED!", "THIS IS WAR!"]
+            }
+        };
+
+        function getRandomText(category) {
+            const mode = isJennifer ? 'jennifer' : 'normal';
+            const list = dialogues[mode][category];
+            return list[Math.floor(Math.random() * list.length)];
+        }
 
         // --- 初始化 ---
         document.getElementById('file').addEventListener('change', async (e) => {
@@ -216,22 +270,21 @@
 
             if(isJennifer) {
                 document.getElementById('stage').className = 'bg-class';
-                speak("Don't make me angry.");
+                speak("Class is in session. Sit down.");
             } else {
-                speak("Hi " + playerName + "!");
+                speak("Hi " + playerName + "! Let's play!");
             }
             
             requestAnimationFrame(physicsLoop);
             setInterval(survivalLoop, 2000);
             
-            // 監聽
             window.addEventListener('mousemove', onMove);
             window.addEventListener('touchmove', onMove, {passive:false});
             window.addEventListener('mouseup', onUp);
             window.addEventListener('touchend', onUp);
         }
 
-        // --- 物理 Loop ---
+        // --- 物理 ---
         const petC = document.getElementById('pet-container');
         const petImg = document.getElementById('pet-img');
         petC.addEventListener('mousedown', startDragPet);
@@ -247,26 +300,26 @@
             lastX = cx; lastY = cy;
             petC.style.cursor = 'grabbing';
             petImg.style.transform = 'scale(1.1)';
-            
-            if(isSad && !isJennifer) {
-                // 摸摸安慰
-                speak("Thank you...");
-                isSad = false;
-                petImg.classList.remove('sad');
-            }
+            speak(getRandomText('drag'));
         }
 
         function physicsLoop() {
-            if(isGameOver) return; // 遊戲結束停止物理
+            if(isGameOver) return;
 
             if(!isDraggingPet) {
-                vy += 0.8; 
+                vy += 0.8; // 重力
                 px += vx; py += vy;
+
+                // 7. 防飛出邊界 (天花板)
+                if(py < -100) { py = -100; vy = -vy * 0.5; } 
+
+                // 地板
                 const floorY = window.innerHeight - 180;
                 if(py > floorY) {
                     py = floorY; vy = -vy * 0.4; vx *= 0.8;
                     if(Math.abs(vy) < 1) vy = 0;
                 }
+                // 牆壁
                 if(px < 50) { px = 50; vx = -vx * 0.6; }
                 if(px > window.innerWidth - 50) { px = window.innerWidth - 50; vx = -vx * 0.6; }
 
@@ -274,9 +327,46 @@
                 
                 if(py < floorY - 10) petImg.style.transform = `rotate(${vx * 2}deg)`;
                 else petImg.style.transform = `rotate(0deg)`;
+
+                // 7. 移動軌跡 (當速度夠快時)
+                if(Math.abs(vx) > 5 || Math.abs(vy) > 5) {
+                    createTrail(px, py);
+                }
             }
             requestAnimationFrame(physicsLoop);
         }
+
+        // 7. 軌跡生成
+        function createTrail(x, y) {
+            if(Math.random() > 0.3) return; // 不要太頻繁
+            const dot = document.createElement('div');
+            dot.className = 'trail-dot';
+            dot.style.left = x + 'px';
+            dot.style.top = y + 'px';
+            document.getElementById('stage').appendChild(dot);
+            setTimeout(() => dot.remove(), 800);
+        }
+
+        // 5. 點擊反饋
+        petC.addEventListener('click', () => {
+            if(isDraggingPet || isGameOver) return;
+            // 簡單判斷：如果移動很小就算點擊
+            if(Math.abs(vx) < 2 && Math.abs(vy) < 2) {
+                if(isJennifer) {
+                    speak(getRandomText('touch'));
+                    playSound('bad');
+                    createParticles(px, py, '💢'); // 憤怒符號
+                } else {
+                    stats.energy = Math.min(100, stats.energy + 5);
+                    speak(getRandomText('touch'));
+                    playSound('pop');
+                    createParticles(px, py, '❤️'); // 愛心
+                    updateBars();
+                    
+                    if(isSad) { isSad = false; petImg.classList.remove('sad'); }
+                }
+            }
+        });
 
         // --- 屎系統 ---
         function spawnPoop() {
@@ -305,7 +395,7 @@
             el.style.zIndex = 999; el.style.transform = "scale(1.3)";
         }
 
-        // --- 統一移動 ---
+        // --- 互動邏輯 ---
         function onMove(e) {
             if(isGameOver) return;
             const cx = e.touches ? e.touches[0].clientX : e.clientX;
@@ -331,7 +421,11 @@
             const cx = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
             const cy = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
 
-            if(isDraggingPet) { isDraggingPet = false; petC.style.cursor = 'grab'; petImg.style.transform = 'scale(1)'; }
+            if(isDraggingPet) { 
+                isDraggingPet = false; petC.style.cursor = 'grab'; 
+                petImg.style.transform = 'scale(1)'; 
+                if(Math.abs(vx) > 10) speak(getRandomText('drop')); // 拋出去說話
+            }
             
             if(isToolDragging) {
                 isToolDragging = false;
@@ -345,10 +439,10 @@
                 el.style.zIndex = 100; el.style.transform = "scale(1)";
                 const timeDiff = Date.now() - poopClickTime;
                 
-                if(timeDiff < 200) cleanPoop(el); // 點擊 = 清理
+                if(timeDiff < 200) cleanPoop(el); 
                 else {
-                    if(checkHit(cx, cy)) forceFeedPoop(el); // 餵食
-                    else fallPoop(el); // 掉落
+                    if(checkHit(cx, cy)) forceFeedPoop(el); 
+                    else fallPoop(el); 
                 }
             }
         }
@@ -358,40 +452,41 @@
             return (x > rect.left && x < rect.right && y > rect.top && y < rect.bottom);
         }
 
-        // --- 核心結局邏輯 ---
+        // --- 11. 恐怖餵屎結局邏輯 ---
         function forceFeedPoop(el) {
             el.remove();
             poopCount = Math.max(0, poopCount-1);
             
             if(isJennifer) {
-                // Jennifer 模式：瞬間 KO
-                triggerJenniferKO();
+                // 延遲恐怖攻擊
+                isGameOver = true;
+                petImg.classList.add('sick'); // 先變綠
+                speak(getRandomText('eat_poop_anger'));
+                playSound('bad');
+
+                // 1秒後恐怖攻擊
+                setTimeout(() => {
+                   petImg.classList.remove('sick');
+                   petImg.classList.add('attack'); // 衝過來
+                   playSound('scream');
+                   
+                   // 再過0.5秒黑屏
+                   setTimeout(() => {
+                        document.getElementById('game-over-screen').style.display = 'flex';
+                        document.querySelector('.dock').style.display = 'none';
+                        document.getElementById('status-panel').style.display = 'none';
+                   }, 400);
+                }, 1500);
+
             } else {
-                // 普通模式：傷心但繼續
                 isSad = true;
                 petImg.classList.add('sad');
-                speak("Why...?");
+                speak(getRandomText('eat_poop_sad'));
                 playSound('bad');
                 stats.clean = 0;
-                stats.hunger = 100; // 飽了，但是是屎
+                stats.hunger = 100; 
                 updateBars();
             }
-        }
-
-        function triggerJenniferKO() {
-            isGameOver = true;
-            // 視覺特效：瞬間放大撲向鏡頭
-            petImg.classList.add('attack'); 
-            
-            // 音效：尖叫
-            playSound('scream');
-            
-            // 延遲跳出黑幕
-            setTimeout(() => {
-                document.getElementById('game-over-screen').style.display = 'flex';
-                document.querySelector('.dock').style.display = 'none';
-                document.getElementById('status-panel').style.display = 'none';
-            }, 300);
         }
 
         function cleanPoop(el) {
@@ -400,7 +495,7 @@
             setTimeout(() => el.remove(), 500);
             poopCount = Math.max(0, poopCount-1);
             stats.clean += 10;
-            if(isJennifer) speak("Finally."); else speak("Thanks!");
+            speak(getRandomText('clean_poop'));
             updateBars();
         }
 
@@ -410,7 +505,7 @@
             setTimeout(() => el.style.transition = "none", 500);
         }
 
-        // --- 道具 ---
+        // --- 道具效果 ---
         function spawnTool(type, e) {
             if(isGameOver) return;
             if(e) e.preventDefault();
@@ -423,22 +518,111 @@
 
         function applyTool(type) {
             if(isSad && type === 'food' && !isJennifer) {
-                // 餵食可以解除傷心
-                isSad = false;
-                petImg.classList.remove('sad');
-                speak("Yummy! I forgive you.");
+                isSad = false; petImg.classList.remove('sad');
+                speak("I forgive you!");
             }
 
             if(isJennifer) {
-                if(type==='food') speak("No eating in class!");
-                else if(type==='soap') { stats.clean=100; speak("Cleanliness is key."); playSound('clean'); document.querySelectorAll('.poop').forEach(e=>e.remove()); poopCount=0; }
-                else if(type==='phone') { speak("DETENTION!"); playSound('bad'); }
+                if(type==='food') speak(getRandomText('food'));
+                else if(type==='soap') { 
+                    // 9. Jennifer 拒絕洗澡
+                    speak(getRandomText('soap'));
+                    playSound('bad');
+                    // 彈開動作
+                    vx = (Math.random()-0.5)*20; vy = -10;
+                }
+                else if(type==='phone') { speak(getRandomText('phone')); playSound('bad'); }
+                else if(type==='bed') { speak(getRandomText('bed')); }
             } else {
-                if(type==='food') { stats.hunger=Math.min(100, stats.hunger+30); speak("Yum!"); playSound('eat'); }
-                else if(type==='soap') { stats.clean=100; speak("Fresh!"); playSound('clean'); document.querySelectorAll('.poop').forEach(e=>e.remove()); poopCount=0; }
-                else if(type==='phone') { speak("Yay games!"); playSound('pop'); }
+                if(type==='food') { stats.hunger=Math.min(100, stats.hunger+30); speak(getRandomText('food')); playSound('eat'); }
+                else if(type==='soap') { 
+                    // 12. 洗澡泡泡聲與特效
+                    stats.clean=100; speak(getRandomText('soap')); 
+                    playSound('bubble'); 
+                    createBubbleEffects(px, py); // 視覺泡泡
+                    document.querySelectorAll('.poop').forEach(e=>e.remove()); poopCount=0; 
+                }
+                else if(type==='phone') { 
+                    // 2. 拍照功能
+                    takePhoto();
+                }
+                else if(type==='bed') { speak(getRandomText('bed')); }
             }
             updateBars();
+        }
+
+        // 2. 拍照功能實現
+        function takePhoto() {
+            playSound('shutter');
+            speak(getRandomText('phone'));
+            
+            // 閃光燈
+            const flash = document.getElementById('flash-overlay');
+            flash.style.opacity = 1;
+            setTimeout(() => flash.style.opacity = 0, 100);
+
+            // 簡單生成圖片下載 (合成背景與人物)
+            const canvas = document.createElement('canvas');
+            canvas.width = 400; canvas.height = 400;
+            const ctx = canvas.getContext('2d');
+            
+            // 畫背景顏色
+            ctx.fillStyle = '#fce4ec'; 
+            ctx.fillRect(0,0,400,400);
+            
+            // 畫文字
+            ctx.fillStyle = '#333'; ctx.font = '20px Fredoka';
+            ctx.fillText("My Pet " + playerName, 20, 30);
+            ctx.fillText(new Date().toLocaleDateString(), 20, 380);
+
+            // 嘗試畫圖 (因跨域問題，這裡用簡單的圓形代替示意，實際環境若圖片同源可 drawImage)
+            const img = document.getElementById('pet-img');
+            try {
+                ctx.drawImage(img, 50, 50, 300, 300);
+            } catch(e) {
+                ctx.beginPath(); ctx.arc(200,200,100,0,Math.PI*2); ctx.fillStyle='#ccc'; ctx.fill();
+                ctx.fillStyle='black'; ctx.fillText("Photo Saved!", 150, 200);
+            }
+
+            // 下載
+            const link = document.createElement('a');
+            link.download = 'pet_photo.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+
+        // 8 & 12. 泡泡特效生成
+        function createBubbleEffects(x, y) {
+            for(let i=0; i<10; i++) {
+                const b = document.createElement('div');
+                b.className = 'bubble-particle';
+                const size = Math.random()*20 + 10;
+                b.style.width = size+'px'; b.style.height = size+'px';
+                b.style.left = (x + (Math.random()-0.5)*100) + 'px';
+                b.style.top = (y + (Math.random()-0.5)*100) + 'px';
+                document.getElementById('stage').appendChild(b);
+                setTimeout(()=>b.remove(), 1000);
+            }
+        }
+        
+        // 5. 愛心/憤怒特效
+        function createParticles(x, y, char) {
+            for(let i=0; i<3; i++) {
+                const p = document.createElement('div');
+                p.innerText = char;
+                p.style.position = 'absolute';
+                p.style.left = x + 'px'; p.style.top = y + 'px';
+                p.style.fontSize = '30px'; p.style.pointerEvents = 'none';
+                p.style.transition = '1s';
+                p.style.zIndex = 100;
+                document.getElementById('stage').appendChild(p);
+                
+                setTimeout(() => {
+                    p.style.transform = `translate(${(Math.random()-0.5)*100}px, -100px) scale(0)`;
+                    p.style.opacity = 0;
+                }, 50);
+                setTimeout(() => p.remove(), 1000);
+            }
         }
 
         function survivalLoop() {
@@ -447,10 +631,8 @@
             stats.clean = Math.max(0, stats.clean-0.5);
             stats.energy = Math.max(0, stats.energy-0.5);
             
-            // 拉屎機率
             if(stats.hunger > 50 && Math.random()<0.08) spawnPoop();
             
-            // 骯髒狀態 (如果不是傷心狀態)
             if(stats.clean < 40 && !isSad) {
                 petImg.classList.add('dirty');
                 const fz = document.getElementById('flies-zone');
@@ -468,39 +650,75 @@
             document.getElementById('bar-energy').style.width = stats.energy+'%';
         }
 
+        // 10. 說話停留久一點
         function speak(text) {
             const b = document.getElementById('bubble');
             b.innerText = text; b.style.transform = "translateX(-50%) scale(1)";
             b.style.color = isJennifer ? "red" : "black";
+            
             window.speechSynthesis.cancel();
             const u = new SpeechSynthesisUtterance(text);
+            // 6. 確保 Jennifer 說英文
             u.lang = isJennifer ? 'en-US' : 'zh-HK';
-            u.rate = 1.1;
+            u.rate = 1.0;
             window.speechSynthesis.speak(u);
-            setTimeout(()=>b.style.transform="translateX(-50%) scale(0)", 2000);
+            
+            clearTimeout(speakTimeout);
+            speakTimeout = setTimeout(()=>b.style.transform="translateX(-50%) scale(0)", 4000); // 4秒
         }
         
         function changeScene() {
             if(isGameOver) return;
-            if(isJennifer) { 
-                // 即使是 Jennifer 模式，現在也允許切換，但她會碎念
-                speak("Fine. Sit anywhere."); 
-            }
+            if(isJennifer) speak("Fine. Sit anywhere."); 
             sceneIdx = (sceneIdx+1)%scenes.length;
             document.getElementById('stage').className = scenes[sceneIdx];
         }
 
+        // 12. 新增音效
         function playSound(t) {
             const osc = audioCtx.createOscillator(); const g = audioCtx.createGain();
             osc.connect(g); g.connect(audioCtx.destination);
             const now = audioCtx.currentTime;
-            if(t==='pop') { osc.frequency.setValueAtTime(600,now); osc.frequency.exponentialRampToValueAtTime(1000,now+0.1); }
-            else if(t==='fart') { osc.type='sawtooth'; osc.frequency.setValueAtTime(150,now); osc.frequency.linearRampToValueAtTime(50,now+0.4); }
-            else if(t==='scream') { osc.type='sawtooth'; osc.frequency.setValueAtTime(500,now); osc.frequency.exponentialRampToValueAtTime(100,now+0.5); g.gain.setValueAtTime(0.5,now); } // 恐怖聲音
-            else if(t==='bad') { osc.type='square'; osc.frequency.setValueAtTime(150,now); osc.frequency.linearRampToValueAtTime(100,now+0.3); }
-            else { osc.frequency.setValueAtTime(400,now); }
-            g.gain.setValueAtTime(0.2,now); g.gain.linearRampToValueAtTime(0,now+0.3);
-            osc.start(now); osc.stop(now+0.3);
+            
+            if(t==='pop') { 
+                osc.frequency.setValueAtTime(600,now); osc.frequency.exponentialRampToValueAtTime(1200,now+0.1); 
+                g.gain.setValueAtTime(0.1,now); g.gain.linearRampToValueAtTime(0,now+0.1);
+                osc.start(now); osc.stop(now+0.1);
+            }
+            else if(t==='bubble') { // 泡泡聲
+                osc.type='triangle';
+                osc.frequency.setValueAtTime(300,now); osc.frequency.linearRampToValueAtTime(600,now+0.1);
+                g.gain.setValueAtTime(0.1,now); g.gain.linearRampToValueAtTime(0,now+0.2);
+                osc.start(now); osc.stop(now+0.2);
+            }
+            else if(t==='shutter') { // 快門聲 (噪音模擬)
+                osc.type='square'; osc.frequency.setValueAtTime(1000,now);
+                g.gain.setValueAtTime(0.1,now); g.gain.linearRampToValueAtTime(0,now+0.05);
+                osc.start(now); osc.stop(now+0.05);
+            }
+            else if(t==='fart') { 
+                osc.type='sawtooth'; osc.frequency.setValueAtTime(150,now); osc.frequency.linearRampToValueAtTime(50,now+0.4); 
+                g.gain.setValueAtTime(0.2,now); g.gain.linearRampToValueAtTime(0,now+0.4);
+                osc.start(now); osc.stop(now+0.4);
+            }
+            else if(t==='scream') { // 恐怖尖叫
+                osc.type='sawtooth'; 
+                osc.frequency.setValueAtTime(400,now); 
+                osc.frequency.linearRampToValueAtTime(1500,now+0.2); 
+                osc.frequency.linearRampToValueAtTime(100,now+0.5);
+                g.gain.setValueAtTime(0.5,now); g.gain.linearRampToValueAtTime(0,now+0.5);
+                osc.start(now); osc.stop(now+0.5);
+            }
+            else if(t==='bad') { 
+                osc.type='square'; osc.frequency.setValueAtTime(150,now); osc.frequency.linearRampToValueAtTime(100,now+0.3); 
+                g.gain.setValueAtTime(0.2,now); g.gain.linearRampToValueAtTime(0,now+0.3);
+                osc.start(now); osc.stop(now+0.3);
+            }
+            else if(t==='eat') {
+                osc.frequency.setValueAtTime(300,now); osc.frequency.linearRampToValueAtTime(200,now+0.1);
+                g.gain.setValueAtTime(0.1,now); g.gain.linearRampToValueAtTime(0,now+0.1);
+                osc.start(now); osc.stop(now+0.1);
+            }
         }
     </script>
 </body>
