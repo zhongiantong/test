@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NEXUS | 個人遊戲空間</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/nexus-ui.css">
+    <script src="js/nexus-system.js"></script>
     <style>
         /* --- 全域設定 --- */
         :root {
@@ -291,7 +293,7 @@
         </div>
 
         <div class="grid">
-            <a href="space-dodger.html" class="card">
+            <a href="space-dodger-upgraded.html" class="card">
                 <div class="icon">🚀</div>
                 <div class="card-title">太空閃避</div>
                 <div class="tags"><span class="tag tech">體感</span><span class="tag hot">刺激</span></div>
@@ -453,6 +455,11 @@
         // 初始化
         updateHero();
         setInterval(updateHero, duration + 500); // 加上過場時間
+
+        // 初始化 NEXUS 系統
+        if (window.nexus) {
+            console.log('NEXUS 系統已載入');
+        }
     </script>
 </body>
 </html>

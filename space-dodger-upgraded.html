@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Space Dodger - 體感閃避</title>
+    <link rel="stylesheet" href="css/nexus-ui.css">
+    <script src="js/nexus-system.js"></script>
+    <style>
+        body { 
+            margin: 0; 
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            color: white; 
+            overflow: hidden; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            min-height: 100vh;
+        }
+        
+        #game-container { 
+            position: relative; 
+            width: 640px; 
+            height: 480px; 
+            border: 4px solid var(--primary); 
+            margin-top: 20px;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+        }
+        
+        video, canvas { 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            transform: scaleX(-1); 
+            object-fit: cover; 
+        }
+        
+        .divider { 
+            position: absolute; 
+            left: 50%; 
+            top: 0; 
+            bottom: 0; 
+            width: 2px; 
+            background: rgba(255,255,255,0.3); 
+            z-index: 5; 
+        }
+        
+        .ui { 
+            position: absolute; 
+            z-index: 10; 
+            color: var(--accent); 
+            font-size: 24px; 
+            font-weight: bold; 
+            top: 10px; 
+            left: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        }
+        
+        #start-btn { 
+            position: absolute; 
+            top: 50%; 
+            left: 50%; 
+            transform: translate(-50%, -50%); 
+            padding: 20px 40px; 
+            font-size: 24px; 
+            z-index: 20; 
+            background: var(--primary); 
+            color: white;
+            border: none; 
+            cursor: pointer;
+            border-radius: 50px;
+            box-shadow: 0 10px 30px rgba(0, 210, 255, 0.4);
+        }
+        
+        #start-btn:hover {
+            transform: translate(-50%, -50%) scale(1.1);
+            box-shadow: 0 15px 40px rgba(0, 210, 255, 0.6);
+        }
+
+        .player {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: var(--primary);
+            border-radius: 50%;
+            bottom: 50px;
+            transition: left 0.2s ease;
+            box-shadow: 0 0 20px var(--primary);
+        }
+
+        .obstacle {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: var(--secondary);
+            border-radius: 5px;
+            animation: fall linear;
+        }
+
+        @keyframes fall {
+            from { top: -30px; }
+            to { top: 480px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="nexus-container">
+        <h2>🚀 身體左右動一動</h2>
+        <div id="game-container">
+            <video id="webcam" autoplay playsinline></video>
+            <canvas id="canvas"></canvas>
+            <div class="divider"></div>
+            <div class="ui">Score: <span id="score">0</span></div>
+            <button id="start-btn" class="nexus-btn" onclick="init()">啟動引擎</button>
+            <div id="player" class="player"></div>
+        </div>
+        <a href="index.html" class="nexus-btn" style="margin-top: 30px;">⬅ 回到首頁</a>
+        <button class="nexus-btn" onclick="window.nexus.showSettings()" style="margin-left: 10px;">⚙️ 設置</button>
+    </div>
+
+    <script>
+        const video = document.getElementById('webcam');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const startBtn = document.getElementById('start-btn');
+        const playerEl = document.getElementById('player');
+        
+        let playerX = 320;
+        let prevFrame = null;
+        let obstacles = [];
+        let score = 0;
+        let isRunning = false;
+        let gameStartTime = null;
+        let gameInterval = null;
+
+        // NEXUS 系統初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            // 顯示體感控制引導
+            if (window.nexus) {
+                setTimeout(() => {
+                    window.nexus.interactionGuide.show('motion', 'Space Dodger');
+                }, 1000);
+            }
+        });
+
+        async function init() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = stream;
+                video.addEventListener('loadedmetadata', () => {
+                    canvas.width = 640;
+                    canvas.height = 480;
+                    startBtn.style.display = 'none';
+                    isRunning = true;
+                    gameStartTime = Date.now();
+                    
+                    // 啟動遊戲音效
+                    if (window.nexus) {
+                        window.nexus.soundManager.play('gameStart');
+                    }
+                    
+                    gameLoop();
+                    startObstacleGeneration();
+                });
+            } catch(e) { 
+                alert("請允許鏡頭權限");
+                if (window.nexus) {
+                    window.nexus.visualFeedback.showToast('請允許鏡頭權限', 'error');
+                }
+            }
+        }
+
+        function gameLoop() {
+            if (!isRunning) return;
+
+            // 偵測動作
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            
+            if (prevFrame) {
+                let leftMotion = 0;
+                let rightMotion = 0;
+
+                // 掃描左半邊 vs 右半邊
+                for (let y = 0; y < canvas.height; y += 10) {
+                    for (let x = 0; x < canvas.width; x += 10) {
+                        const i = (y * canvas.width + x) * 4;
+                        const diff = Math.abs(frame.data[i] - prevFrame.data[i]);
+                        
+                        if (diff > 30) {
+                            if (x < canvas.width / 2) leftMotion++;
+                            else rightMotion++;
+                        }
+                    }
+                }
+
+                // 根據動量移動飛船
+                if (leftMotion > rightMotion + 50) playerX -= 8;
+                if (rightMotion > leftMotion + 50) playerX += 8;
+                
+                // 邊界限制
+                if (playerX < 20) playerX = 20;
+                if (playerX > 600) playerX = 600;
+            }
+            prevFrame = frame;
+
+            // 更新玩家位置
+            playerEl.style.left = playerX + 'px';
+
+            // 檢查碰撞
+            checkCollisions();
+            
+            // 清理超出螢幕的障礙物
+            obstacles = obstacles.filter(obs => {
+                const top = parseFloat(obs.style.top);
+                if (top > 480) {
+                    obs.remove();
+                    score++;
+                    document.getElementById('score').innerText = score;
+                    
+                    // 分數音效
+                    if (window.nexus) {
+                        window.nexus.soundManager.play('collect');
+                    }
+                    return false;
+                }
+                return true;
+            });
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function startObstacleGeneration() {
+            gameInterval = setInterval(() => {
+                if (!isRunning) return;
+                
+                const obstacle = document.createElement('div');
+                obstacle.className = 'obstacle';
+                obstacle.style.left = Math.random() * 600 + 'px';
+                obstacle.style.top = '0px';
+                obstacle.style.animationDuration = (3 + Math.random() * 3) + 's';
+                
+                document.getElementById('game-container').appendChild(obstacle);
+                obstacles.push(obstacle);
+            }, 1000);
+        }
+
+        function checkCollisions() {
+            const playerRect = playerEl.getBoundingClientRect();
+            
+            obstacles.forEach(obstacle => {
+                const obsRect = obstacle.getBoundingClientRect();
+                
+                if (playerRect.left < obsRect.left + obsRect.width &&
+                    playerRect.left + playerRect.width > obsRect.left &&
+                    playerRect.top < obsRect.top + obsRect.height &&
+                    playerRect.top + playerRect.height > obsRect.top) {
+                    
+                    gameOver();
+                }
+            });
+        }
+
+        function gameOver() {
+            isRunning = false;
+            clearInterval(gameInterval);
+            
+            const gameDuration = Math.floor((Date.now() - gameStartTime) / 1000);
+            
+            // 記錄遊戲數據
+            if (window.nexus) {
+                window.nexus.endGame('space-dodger', score, gameDuration);
+            }
+            
+            // 顯示遊戲結束畫面
+            const gameOverDiv = document.createElement('div');
+            gameOverDiv.className = 'interaction-guide';
+            gameOverDiv.innerHTML = `
+                <h3>🎮 遊戲結束</h3>
+                <div style="font-size: 48px; margin: 20px 0;">🏆</div>
+                <p>最終分數：${score}</p>
+                <p>遊戲時長：${gameDuration}秒</p>
+                <button class="nexus-btn" onclick="location.reload()">再玩一次</button>
+                <button class="nexus-btn" onclick="window.location.href='index.html'" style="margin-left: 10px;">返回首頁</button>
+            `;
+            document.body.appendChild(gameOverDiv);
+        }
+
+        // 鍵盤控制作為備用
+        document.addEventListener('keydown', (e) => {
+            if (!isRunning) return;
+            
+            if (e.key === 'ArrowLeft') playerX -= 20;
+            if (e.key === 'ArrowRight') playerX += 20;
+            
+            if (playerX < 20) playerX = 20;
+            if (playerX > 600) playerX = 600;
+        });
+    </script>
+</body>
+</html>

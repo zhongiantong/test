@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>包剪揼</title>
+<title>包剪揼</title>
+    <link rel="stylesheet" href="css/nexus-ui.css">
+    <script src="js/nexus-system.js"></script>
     <style>
         body { font-family: Arial, sans-serif; background: #1a1a2e; color: white; text-align: center; padding-top: 50px; }
         .container { background: #2d2d44; padding: 40px; border-radius: 10px; display: inline-block; width: 320px; }
@@ -16,18 +18,18 @@
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="nexus-game-container nexus-container">
         <h1>✊ 包剪揼 🖐</h1>
         <div class="score">你: <span id="userScore">0</span> | 電腦: <span id="compScore">0</span></div>
         
         <div class="choices">
-            <button class="btn" onclick="play('✊')">✊</button>
-            <button class="btn" onclick="play('🖐')">🖐</button>
-            <button class="btn" onclick="play('✌️')">✌️</button>
+            <button class="nexus-btn" onclick="play('✊')" style="font-size: 2em; width: 80px; height: 80px; border-radius: 50%;">✊</button>
+            <button class="nexus-btn" onclick="play('🖐')" style="font-size: 2em; width: 80px; height: 80px; border-radius: 50%;">🖐</button>
+            <button class="nexus-btn" onclick="play('✌️')" style="font-size: 2em; width: 80px; height: 80px; border-radius: 50%;">✌️</button>
         </div>
 
-        <div id="result">請出拳...</div>
-        <a href="index.html" class="back-btn">← 返回遊戲大廳</a>
+        <div id="result" style="font-size: 1.5em; margin: 20px 0; font-weight: bold;">請出拳...</div>
+        <a href="index.html" class="nexus-btn">← 返回遊戲大廳</a>
     </div>
 
     <script>
@@ -35,31 +37,49 @@
         let compScore = 0;
         const choices = ['✊', '🖐', '✌️'];
 
+        let gameStartTime = Date.now();
+        
         function play(userChoice) {
             const compChoice = choices[Math.floor(Math.random() * 3)];
             let result = "";
-            let color = "white";
+            let isWin = false;
 
             if (userChoice === compChoice) {
                 result = "打和！";
-                color = "yellow";
             } else if (
                 (userChoice === '✊' && compChoice === '✌️') ||
                 (userChoice === '🖐' && compChoice === '✊') ||
                 (userChoice === '✌️' && compChoice === '🖐')
             ) {
                 result = "你要贏了！";
-                color = "#00ff00";
                 userScore++;
+                isWin = true;
             } else {
                 result = "你輸了！";
-                color = "#ff4444";
                 compScore++;
             }
 
-            document.getElementById('result').innerHTML = `你: ${userChoice}  vs  電腦: ${compChoice}<br><span style="color:${color}">${result}</span>`;
+            // 更新顯示
+            const resultEl = document.getElementById('result');
+            resultEl.innerHTML = `你: ${userChoice}  vs  電腦: ${compChoice}<br><span style="color:${isWin ? 'var(--success-color)' : 'var(--error-color)'}">${result}</span>`;
+            
             document.getElementById('userScore').innerText = userScore;
             document.getElementById('compScore').innerText = compScore;
+
+            // 使用 NEXUS 系統
+            if (window.nexus) {
+                if (isWin) {
+                    window.nexus.visualFeedback.showSuccess(resultEl, result);
+                } else {
+                    window.nexus.visualFeedback.showError(resultEl, result);
+                }
+            }
+
+            // 記錄遊戲數據
+            const gameDuration = Math.floor((Date.now() - gameStartTime) / 1000);
+            if (window.nexus) {
+                window.nexus.gameProgress.recordGamePlay('game1', isWin ? 1 : 0, gameDuration);
+            }
         }
     </script>
 </body>
