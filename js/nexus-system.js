@@ -141,36 +141,74 @@ class VisualFeedback {
 class InteractionGuide {
     constructor() {
         this.currentGuide = null;
+        this.tutorialsCompleted = JSON.parse(localStorage.getItem('nexus_tutorials') || '{}');
         this.templates = {
             'motion': {
                 icon: '📷',
                 title: '體感控制',
                 description: '身體左右移動控制遊戲角色',
-                tips: ['站定在鏡頭前', '左右移動身體', '避免障礙物']
+                tips: ['站定在鏡頭前', '左右移動身體', '避免障礙物'],
+                steps: [
+                    { text: '站在鏡頭前約1-2米距離', icon: '👤' },
+                    { text: '緩慢左右移動身體', icon: '↔️' },
+                    { text: '保持上半身在畫面中', icon: '📐' }
+                ]
             },
             'drag': {
                 icon: '👆',
                 title: '拖曳操作',
                 description: '拖曳移動，點擊互動',
-                tips: ['按住拖曳', '釋放放下', '雙擊特殊功能']
+                tips: ['按住拖曳', '釋放放下', '雙擊特殊功能'],
+                steps: [
+                    { text: '按住物件不放', icon: '🖱️' },
+                    { text: '拖曳到目標位置', icon: '➡️' },
+                    { text: '放開完成操作', icon: '🎯' }
+                ]
             },
             'click': {
                 icon: '🖱️',
                 title: '點擊操作',
                 description: '點擊操作，長按功能',
-                tips: ['單擊選擇', '長按特殊', '快速連點']
+                tips: ['單擊選擇', '長按特殊', '快速連點'],
+                steps: [
+                    { text: '單擊選擇項目', icon: '👆' },
+                    { text: '長按開啟選單', icon: '⏱️' },
+                    { text: '雙擊快速動作', icon: '⚡' }
+                ]
             },
             'keyboard': {
                 icon: '⌨️',
                 title: '鍵盤控制',
                 description: '使用鍵盤控制遊戲',
-                tips: ['方向鍵移動', '空格鍵跳躍', 'Enter確認']
+                tips: ['方向鍵移動', '空格鍵跳躍', 'Enter確認'],
+                steps: [
+                    { text: '方向鍵控制移動', icon: '⬆️⬇️⬅️➡️' },
+                    { text: '空格鍵執行動作', icon: '␣' },
+                    { text: 'ESC鍵暫停遊戲', icon: '⏸️' }
+                ]
+            },
+            'touch': {
+                icon: '👆',
+                title: '觸控操作',
+                description: '觸控螢幕進行遊戲',
+                tips: ['單指拖曳', '雙指縮放', '長按選單'],
+                steps: [
+                    { text: '單指拖曳移動', icon: '👉' },
+                    { text: '雙指縮放視角', icon: '🤏' },
+                    { text: '點擊互動物件', icon: '👈' }
+                ]
             }
         };
     }
 
-    show(type, gameName = '') {
-        if (this.currentGuide) return;
+    show(type, gameName = '', forceShow = false) {
+        // 檢查是否已經完成過此教學
+        const tutorialKey = `${gameName}_${type}`;
+        if (!forceShow && this.tutorialsCompleted[tutorialKey]) {
+            return false; // 已經看過，不顯示
+        }
+        
+        if (this.currentGuide) return false;
         
         const template = this.templates[type] || this.templates['click'];
         
@@ -180,11 +218,34 @@ class InteractionGuide {
             <h3>${template.icon} ${template.title}</h3>
             <div class="interaction-guide-icon">${template.icon}</div>
             <p>${template.description}</p>
-            <div style="text-align: left; margin: 20px 0;">
+            
+            <div class="tutorial-steps" style="margin: 20px 0; text-align: left;">
+                ${template.steps.map((step, i) => `
+                    <div class="tutorial-step" style="display: flex; align-items: center; margin: 10px 0; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                        <div style="font-size: 24px; margin-right: 15px; width: 40px; text-align: center;">${step.icon}</div>
+                        <div>
+                            <div style="font-weight: bold;">步驟 ${i+1}</div>
+                            <div style="font-size: 14px; opacity: 0.8;">${step.text}</div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+            
+            <div style="text-align: left; margin: 20px 0; padding: 15px; background: rgba(0,210,255,0.1); border-radius: 10px;">
+                <div style="font-weight: bold; margin-bottom: 5px;">💡 小提示：</div>
                 ${template.tips.map(tip => `<div style="margin: 5px 0;">• ${tip}</div>`).join('')}
             </div>
-            <button class="nexus-btn" onclick="window.nexus.interactionGuide.hide()">開始遊戲</button>
-            <button onclick="window.nexus.interactionGuide.hide()" style="margin-left: 10px; background: transparent; border: 1px solid rgba(255,255,255,0.3);">跳過</button>
+            
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="nexus-btn" onclick="window.nexus.interactionGuide.completeTutorial('${tutorialKey}')" style="flex: 1;">開始遊戲</button>
+                <button class="nexus-btn" onclick="window.nexus.interactionGuide.hide()" style="background: transparent; border: 1px solid rgba(255,255,255,0.3);">跳過</button>
+            </div>
+            
+            <div style="margin-top: 15px; font-size: 12px; opacity: 0.6;">
+                <label>
+                    <input type="checkbox" id="dont-show-again"> 不要再顯示此教學
+                </label>
+            </div>
         `;
         
         document.body.appendChild(this.currentGuide);
@@ -193,6 +254,35 @@ class InteractionGuide {
         if (window.nexus?.soundManager) {
             window.nexus.soundManager.play('gameStart');
         }
+        
+        return true;
+    }
+
+    completeTutorial(tutorialKey) {
+        this.tutorialsCompleted[tutorialKey] = true;
+        localStorage.setItem('nexus_tutorials', JSON.stringify(this.tutorialsCompleted));
+        
+        const dontShowAgain = document.getElementById('dont-show-again');
+        if (dontShowAgain && dontShowAgain.checked) {
+            // 標記所有同類型的教學為完成
+            Object.keys(this.templates).forEach(type => {
+                const key = tutorialKey.split('_')[0] + '_' + type;
+                this.tutorialsCompleted[key] = true;
+            });
+            localStorage.setItem('nexus_tutorials', JSON.stringify(this.tutorialsCompleted));
+        }
+        
+        this.hide();
+        
+        // 播放完成音效
+        if (window.nexus?.soundManager) {
+            window.nexus.soundManager.play('success');
+        }
+        
+        // 顯示完成提示
+        if (window.nexus?.visualFeedback) {
+            window.nexus.visualFeedback.showToast('教學完成！開始遊戲吧！', 'success');
+        }
     }
 
     hide() {
@@ -200,6 +290,44 @@ class InteractionGuide {
             this.currentGuide.remove();
             this.currentGuide = null;
         }
+    }
+    
+    resetTutorials() {
+        this.tutorialsCompleted = {};
+        localStorage.removeItem('nexus_tutorials');
+    }
+    
+    showQuickTip(message, duration = 3000) {
+        const tip = document.createElement('div');
+        tip.className = 'quick-tip';
+        tip.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 20px;">💡</span>
+                <span>${message}</span>
+            </div>
+        `;
+        
+        tip.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 25px;
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--primary);
+            z-index: 9999;
+            animation: slideUp 0.3s ease-out;
+        `;
+        
+        document.body.appendChild(tip);
+        
+        setTimeout(() => {
+            tip.style.animation = 'slideDown 0.3s ease-in';
+            setTimeout(() => tip.remove(), 300);
+        }, duration);
     }
 }
 
@@ -413,14 +541,18 @@ window.nexus = {
     initGlobalEvents() {
         // 為所有按鈕添加點擊音效
         document.addEventListener('click', (e) => {
-            if (e.target.matches('button, .nexus-btn, .btn')) {
+            const target = e.target;
+            // 安全檢查：確保 target 有 matches 方法
+            if (target && target.matches && target.matches('button, .nexus-btn, .btn')) {
                 this.soundManager?.play('click');
             }
         });
         
         // 為所有可交互元素添加懸停音效
         document.addEventListener('mouseenter', (e) => {
-            if (e.target.matches('button, .nexus-btn, .btn, [role="button"]')) {
+            const target = e.target;
+            // 安全檢查：確保 target 有 matches 方法
+            if (target && target.matches && target.matches('button, .nexus-btn, .btn, [role="button"]')) {
                 this.soundManager?.play('hover');
             }
         }, true);

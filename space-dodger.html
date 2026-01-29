@@ -3,42 +3,248 @@
 <head>
     <meta charset="UTF-8">
     <title>Space Dodger - 體感閃避</title>
+    <script src="js/nexus-system.js"></script>
     <style>
-        body { margin: 0; background: #000; color: white; overflow: hidden; display: flex; flex-direction: column; align-items: center; }
+        body {
+            margin: 0;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            color: white;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: 'Poppins', sans-serif;
+            min-height: 100vh;
+        }
         
-        #game-container { position: relative; width: 640px; height: 480px; border: 4px solid #00d2ff; margin-top: 20px; }
-        video, canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; transform: scaleX(-1); object-fit: cover; }
+        h2 {
+            font-family: 'Orbitron', sans-serif;
+            color: #00d2ff;
+            text-shadow: 0 0 10px rgba(0, 210, 255, 0.7);
+            margin: 20px 0;
+        }
+        
+        #game-container {
+            position: relative;
+            width: 640px;
+            height: 480px;
+            border: 4px solid #00d2ff;
+            margin-top: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(0, 210, 255, 0.4);
+        }
+        video, canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            transform: scaleX(-1);
+            object-fit: cover;
+        }
         
         /* 視覺輔助線 */
-        .divider { position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background: rgba(255,255,255,0.3); z-index: 5; }
+        .divider {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: rgba(255,255,255,0.3);
+            z-index: 5;
+        }
         
-        .ui { position: absolute; z-index: 10; color: #ffeb3b; font-size: 24px; font-weight: bold; top: 10px; left: 10px; }
+        .ui {
+            position: absolute;
+            z-index: 10;
+            color: #ffeb3b;
+            font-size: 24px;
+            font-weight: bold;
+            top: 10px;
+            left: 10px;
+            text-shadow: 0 0 5px rgba(255, 235, 59, 0.8);
+        }
         
-        #start-btn { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 15px 30px; font-size: 20px; z-index: 20; background: #00d2ff; border: none; cursor: pointer; }
+        #start-btn {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 15px 30px;
+            font-size: 20px;
+            z-index: 20;
+            background: linear-gradient(135deg, #00d2ff, #0077ff);
+            border: none;
+            cursor: pointer;
+            color: white;
+            border-radius: 25px;
+            font-weight: bold;
+            box-shadow: 0 0 20px rgba(0, 210, 255, 0.6);
+            transition: all 0.3s ease;
+        }
+        
+        #start-btn:hover {
+            transform: translate(-50%, -50%) scale(1.05);
+            box-shadow: 0 0 30px rgba(0, 210, 255, 0.8);
+        }
+        
+        /* 分數動畫效果 */
+        .score-popup {
+            position: absolute;
+            color: #ffeb3b;
+            font-weight: bold;
+            font-size: 18px;
+            z-index: 15;
+            animation: floatUp 1s ease-out forwards;
+            text-shadow: 0 0 5px rgba(255, 235, 59, 0.8);
+        }
+        
+        @keyframes floatUp {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-50px); opacity: 0; }
+        }
+        
+        /* 碰撞粒子效果 */
+        .particle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #ff4444;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 15;
+        }
+        
+        /* 運動檢測指示器 */
+        .motion-indicator {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+            z-index: 10;
+        }
+        
+        .motion-dot {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            transition: all 0.2s ease;
+        }
+        
+        .motion-dot.active {
+            background: #00d2ff;
+            box-shadow: 0 0 10px #00d2ff;
+        }
+        
+        /* 遊戲結束畫面 */
+        #game-over {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        
+        .game-over-content {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .restart-btn {
+            background: linear-gradient(135deg, #ff0055, #ff4400);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 20px;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
-    <h2>🚀 身體左右動一動</h2>
+    <h2>🚀 太空閃避 - 體感控制遊戲</h2>
     <div id="game-container">
         <video id="webcam" autoplay playsinline></video>
         <canvas id="canvas"></canvas>
         <div class="divider"></div>
-        <div class="ui">Score: <span id="score">0</span></div>
-        <button id="start-btn" onclick="init()">啟動引擎</button>
+        <div class="ui">分數: <span id="score">0</span></div>
+        <button id="start-btn" onclick="startGame()">啟動引擎</button>
+        
+        <!-- 運動檢測指示器 -->
+        <div class="motion-indicator">
+            <div class="motion-dot" id="left-dot"></div>
+            <div class="motion-dot" id="center-dot"></div>
+            <div class="motion-dot" id="right-dot"></div>
+        </div>
+        
+        <!-- 遊戲結束畫面 -->
+        <div id="game-over">
+            <div class="game-over-content">
+                <h3 style="color: #ffeb3b;">遊戲結束！</h3>
+                <p>最終分數: <span id="final-score">0</span></p>
+                <p>最高分數: <span id="high-score">0</span></p>
+                <button class="restart-btn" onclick="restartGame()">再玩一次</button>
+                <br><br>
+                <a href="index.html" style="color:#aaa; text-decoration:none;">⬅ 回到遊戲首頁</a>
+            </div>
+        </div>
     </div>
-    <a href="index.html" style="color:#aaa; text-decoration:none; margin-top:20px;">⬅ 回到首頁</a>
+    <a href="index.html" style="color:#aaa; text-decoration:none; margin-top:20px; padding: 10px 20px; background: rgba(255,255,255,0.1); border-radius: 20px;">⬅ 回到遊戲首頁</a>
 
     <script>
         const video = document.getElementById('webcam');
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         const startBtn = document.getElementById('start-btn');
+        const leftDot = document.getElementById('left-dot');
+        const centerDot = document.getElementById('center-dot');
+        const rightDot = document.getElementById('right-dot');
+        const gameOverScreen = document.getElementById('game-over');
+        const finalScoreEl = document.getElementById('final-score');
+        const highScoreEl = document.getElementById('high-score');
         
         let playerX = 320; // 玩家位置
         let prevFrame = null;
         let obstacles = [];
         let score = 0;
         let isRunning = false;
+        let gameStartTime = 0;
+        let highScore = 0;
+
+        // 初始化 NEXUS 系統
+        if (window.nexus) {
+            window.nexus.init();
+        }
+
+        function startGame() {
+            // 顯示體感控制教學
+            if (window.nexus?.interactionGuide) {
+                window.nexus.interactionGuide.show('motion', 'space-dodger');
+            }
+            
+            // 記錄遊戲開始
+            if (window.nexus?.gameProgress) {
+                window.nexus.gameProgress.recordGamePlay('space-dodger', 0, 0);
+            }
+            
+            init();
+        }
 
         async function init() {
             try {
@@ -49,9 +255,21 @@
                     canvas.height = 480;
                     startBtn.style.display = 'none';
                     isRunning = true;
+                    gameStartTime = Date.now();
                     gameLoop();
+                    
+                    // 播放遊戲開始音效
+                    if (window.nexus?.soundManager) {
+                        window.nexus.soundManager.play('gameStart');
+                    }
                 });
-            } catch(e) { alert("請允許鏡頭權限"); }
+            } catch(e) {
+                alert("請允許鏡頭權限以遊玩此遊戲");
+                // 顯示錯誤提示
+                if (window.nexus?.visualFeedback) {
+                    window.nexus.visualFeedback.showToast('請允許鏡頭權限', 'error');
+                }
+            }
         }
 
         function gameLoop() {
@@ -79,6 +297,9 @@
                     }
                 }
 
+                // 更新運動指示器
+                updateMotionIndicator(leftMotion, rightMotion);
+
                 // 根據動量移動飛船
                 if (leftMotion > rightMotion + 50) playerX -= 8;
                 if (rightMotion > leftMotion + 50) playerX += 8;
@@ -94,47 +315,201 @@
             ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // 畫玩家飛船
+            // 畫玩家飛船 (增強視覺效果)
             ctx.fillStyle = "#00d2ff";
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = "#00d2ff";
             ctx.beginPath();
             ctx.moveTo(playerX, 400);
             ctx.lineTo(playerX - 20, 450);
             ctx.lineTo(playerX + 20, 450);
             ctx.fill();
+            ctx.shadowBlur = 0;
 
             // 產生隕石
             if (Math.random() < 0.05) {
-                obstacles.push({ x: Math.random() * 640, y: -50, size: 20 + Math.random() * 30 });
+                obstacles.push({
+                    x: Math.random() * 640,
+                    y: -50,
+                    size: 20 + Math.random() * 30,
+                    speed: 5 + Math.random() * 3
+                });
             }
 
             // 更新隕石
             for (let i = 0; i < obstacles.length; i++) {
                 let obs = obstacles[i];
-                obs.y += 5; // 下落速度
+                obs.y += obs.speed; // 下落速度
 
-                // 畫隕石
+                // 畫隕石 (增強視覺效果)
                 ctx.fillStyle = "#ff4444";
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = "#ff4444";
                 ctx.beginPath();
                 ctx.arc(obs.x, obs.y, obs.size, 0, Math.PI * 2);
                 ctx.fill();
+                ctx.shadowBlur = 0;
 
                 // 碰撞判定
                 const dist = Math.hypot(playerX - obs.x, 425 - obs.y);
                 if (dist < obs.size + 15) {
+                    // 碰撞效果
                     score = Math.max(0, score - 10); // 撞到扣分
+                    createParticles(obs.x, obs.y, 10);
                     obstacles.splice(i, 1);
                     i--;
-                    ctx.fillStyle = "red"; // 畫面閃紅
+                    
+                    // 畫面閃紅效果
+                    ctx.fillStyle = "rgba(255, 0, 0, 0.3)";
                     ctx.fillRect(0,0,640,480);
+                    
+                    // 播放碰撞音效
+                    if (window.nexus?.soundManager) {
+                        window.nexus.soundManager.play('fail');
+                    }
+                    
+                    // 顯示碰撞提示
+                    if (window.nexus?.visualFeedback) {
+                        window.nexus.visualFeedback.showToast('撞到隕石！-10分', 'error');
+                    }
                 } else if (obs.y > 480) {
+                    // 成功閃避
                     obstacles.splice(i, 1);
                     score++;
                     i--;
+                    
+                    // 顯示分數增加效果
+                    createScorePopup(obs.x, 480, "+1");
+                    
+                    // 播放收集音效
+                    if (window.nexus?.soundManager && score % 5 === 0) {
+                        window.nexus.soundManager.play('collect');
+                    }
                 }
             }
 
             document.getElementById('score').innerText = score;
+            
+            // 檢查遊戲結束條件 (例如: 時間限制或生命值)
+            if (score < 0) {
+                endGame();
+                return;
+            }
+            
             requestAnimationFrame(gameLoop);
+        }
+
+        function updateMotionIndicator(leftMotion, rightMotion) {
+            // 重置所有指示器
+            leftDot.classList.remove('active');
+            centerDot.classList.remove('active');
+            rightDot.classList.remove('active');
+            
+            // 根據運動激活對應指示器
+            if (leftMotion > rightMotion + 50) {
+                leftDot.classList.add('active');
+            } else if (rightMotion > leftMotion + 50) {
+                rightDot.classList.add('active');
+            } else {
+                centerDot.classList.add('active');
+            }
+        }
+
+        function createParticles(x, y, count) {
+            for (let i = 0; i < count; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = (x + Math.random() * 40 - 20) + 'px';
+                particle.style.top = (y + Math.random() * 40 - 20) + 'px';
+                particle.style.background = `hsl(${Math.random() * 60}, 100%, 50%)`;
+                
+                document.getElementById('game-container').appendChild(particle);
+                
+                // 粒子動畫
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 2 + Math.random() * 3;
+                const vx = Math.cos(angle) * speed;
+                const vy = Math.sin(angle) * speed;
+                
+                let opacity = 1;
+                const animate = () => {
+                    opacity -= 0.02;
+                    particle.style.opacity = opacity;
+                    particle.style.left = (parseFloat(particle.style.left) + vx) + 'px';
+                    particle.style.top = (parseFloat(particle.style.top) + vy) + 'px';
+                    
+                    if (opacity > 0) {
+                        requestAnimationFrame(animate);
+                    } else {
+                        particle.remove();
+                    }
+                };
+                animate();
+            }
+        }
+
+        function createScorePopup(x, y, text) {
+            const popup = document.createElement('div');
+            popup.className = 'score-popup';
+            popup.textContent = text;
+            popup.style.left = x + 'px';
+            popup.style.top = y + 'px';
+            
+            document.getElementById('game-container').appendChild(popup);
+            
+            // 自動移除
+            setTimeout(() => popup.remove(), 1000);
+        }
+
+        function endGame() {
+            isRunning = false;
+            const gameDuration = (Date.now() - gameStartTime) / 1000;
+            
+            // 更新最高分數
+            if (score > highScore) {
+                highScore = score;
+                if (window.nexus?.soundManager) {
+                    window.nexus.soundManager.play('levelUp');
+                }
+                if (window.nexus?.visualFeedback) {
+                    window.nexus.visualFeedback.showToast('新紀錄！', 'success');
+                }
+            }
+            
+            // 顯示遊戲結束畫面
+            finalScoreEl.textContent = score;
+            highScoreEl.textContent = highScore;
+            gameOverScreen.style.display = 'flex';
+            
+            // 記錄遊戲結果到 NEXUS 系統
+            if (window.nexus?.gameProgress) {
+                window.nexus.gameProgress.recordGamePlay('space-dodger', score, gameDuration);
+            }
+            
+            // 播放遊戲結束音效
+            if (window.nexus?.soundManager) {
+                window.nexus.soundManager.play(score > 50 ? 'success' : 'fail');
+            }
+        }
+
+        function restartGame() {
+            // 重置遊戲狀態
+            playerX = 320;
+            obstacles = [];
+            score = 0;
+            isRunning = false;
+            gameOverScreen.style.display = 'none';
+            
+            // 清除所有粒子
+            document.querySelectorAll('.particle, .score-popup').forEach(el => el.remove());
+            
+            // 重新顯示開始按鈕
+            startBtn.style.display = 'block';
+            
+            // 播放重新開始音效
+            if (window.nexus?.soundManager) {
+                window.nexus.soundManager.play('click');
+            }
         }
     </script>
 </body>

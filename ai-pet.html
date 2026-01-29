@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>MY PET</title>
     <script src="https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.3.0/dist/imgly-background-removal.min.js"></script>
+    <script src="js/nexus-system.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600&family=Noto+Sans+TC:wght@700&display=swap" rel="stylesheet">
     
     <style>
@@ -210,10 +211,11 @@
     <script>
         // --- 全局變數 ---
         let isJennifer = false;
-        let isSad = false; 
+        let isSad = false;
         let isGameOver = false;
         let playerName = "Tom";
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let gameStartTime = 0;
         
         let stats = { hunger: 80, clean: 80, energy: 80 };
         let poopCount = 0;
@@ -324,15 +326,27 @@
 
             if(audioCtx.state === 'suspended') audioCtx.resume();
 
+            // 初始化 NEXUS 系統
+            if (window.nexus) {
+                window.nexus.init();
+                // 記錄遊戲開始
+                window.nexus.gameProgress.recordGamePlay('ai-pet', 0, 0);
+                // 顯示拖曳操作教學
+                window.nexus.interactionGuide.show('drag', 'ai-pet');
+            }
+
+            // 記錄遊戲開始時間
+            gameStartTime = Date.now();
+
             if(isJennifer) {
                 document.getElementById('stage').className = 'bg-class';
                 document.title = "JENNIFER";
                 speak("Class is in session.");
                 
                 // Jennifer 專屬碎念 Loop
-                setInterval(() => { 
+                setInterval(() => {
                     if(!isGameOver && !isDraggingPet && Math.random() < 0.4) {
-                        speak(getRandomText('random')); 
+                        speak(getRandomText('random'));
                     }
                 }, 5000);
 
@@ -605,79 +619,177 @@
 
         function applyTool(type) {
             // 解除悲傷
-            if(isSad && type === 'food' && !isJennifer) { 
-                isSad = false; 
-                petImg.classList.remove('sad'); 
-                speak("I forgive you!"); 
+            if(isSad && type === 'food' && !isJennifer) {
+                isSad = false;
+                petImg.classList.remove('sad');
+                speak("I forgive you!");
+                // NEXUS 反饋
+                if (window.nexus?.visualFeedback) {
+                    window.nexus.visualFeedback.showToast('寵物原諒你了！', 'success');
+                }
             }
 
             if(isJennifer) {
                 // --- Jennifer 模式反應 ---
-                if(type==='food') speak(getRandomText('food'));
-                else if(type==='soap') { speak(getRandomText('soap')); playSound('bad'); vx = (Math.random()-0.5)*20; vy = -10; }
-                else if(type==='phone') { 
-                    // 沒收手機 & 特定語音
-                    speak("Put your electronic devices in your backpack!"); 
-                    playSound('bad'); 
-                    document.getElementById('btn-phone').classList.add('hidden'); 
+                if(type==='food') {
+                    speak(getRandomText('food'));
+                    if (window.nexus?.visualFeedback) {
+                        window.nexus.visualFeedback.showToast('Jennifer: 不准吃東西！', 'warning');
+                    }
                 }
-                else if(type==='bed') { speak(getRandomText('bed')); }
-                else if(type==='ball') { speak(getRandomText('ball')); playSound('bad'); removeBall(); } 
-                else if(type==='book') { speak(getRandomText('book')); createParticles(px, py, '✨'); }
+                else if(type==='soap') {
+                    speak(getRandomText('soap'));
+                    playSound('bad');
+                    vx = (Math.random()-0.5)*20;
+                    vy = -10;
+                    if (window.nexus?.visualFeedback) {
+                        window.nexus.visualFeedback.showToast('Jennifer: 別碰我！', 'error');
+                    }
+                }
+                else if(type==='phone') {
+                    // 沒收手機 & 特定語音
+                    speak("Put your electronic devices in your backpack!");
+                    playSound('bad');
+                    document.getElementById('btn-phone').classList.add('hidden');
+                    if (window.nexus?.visualFeedback) {
+                        window.nexus.visualFeedback.showToast('手機被沒收了！', 'error');
+                    }
+                }
+                else if(type==='bed') {
+                    speak(getRandomText('bed'));
+                    if (window.nexus?.visualFeedback) {
+                        window.nexus.visualFeedback.showToast('Jennifer: 不准睡覺！', 'warning');
+                    }
+                }
+                else if(type==='ball') {
+                    speak(getRandomText('ball'));
+                    playSound('bad');
+                    removeBall();
+                    if (window.nexus?.visualFeedback) {
+                        window.nexus.visualFeedback.showToast('球被沒收了！', 'error');
+                    }
+                }
+                else if(type==='book') {
+                    speak(getRandomText('book'));
+                    createParticles(px, py, '✨');
+                    if (window.nexus?.visualFeedback) {
+                        window.nexus.visualFeedback.showToast('Jennifer: 很好，讀書！', 'success');
+                    }
+                }
             } else {
                 // --- 普通模式反應 ---
-                if(type==='food') { 
-                    stats.hunger=Math.min(100, stats.hunger+30); 
-                    speak(getRandomText('food')); 
-                    playSound('eat'); 
+                if(type==='food') {
+                    stats.hunger=Math.min(100, stats.hunger+30);
+                    speak(getRandomText('food'));
+                    playSound('eat');
+                    // NEXUS 反饋
+                    if (window.nexus?.visualFeedback) {
+                        window.nexus.visualFeedback.showToast('餵食成功！飢餓度 +30', 'success');
+                    }
+                    // 檢查成就
+                    if (stats.hunger >= 100 && window.nexus?.gameProgress) {
+                        window.nexus.gameProgress.unlockAchievement('perfectScore');
+                    }
                 }
-                else if(type==='soap') { 
-                    stats.clean=100; 
-                    speak(getRandomText('soap')); 
-                    playSound('bubble'); 
-                    createBubbleEffects(px, py); 
-                    document.querySelectorAll('.poop').forEach(e=>e.remove()); 
-                    poopCount=0; 
+                else if(type==='soap') {
+                    stats.clean=100;
+                    speak(getRandomText('soap'));
+                    playSound('bubble');
+                    createBubbleEffects(px, py);
+                    document.querySelectorAll('.poop').forEach(e=>e.remove());
+                    poopCount=0;
+                    // NEXUS 反饋
+                    if (window.nexus?.visualFeedback) {
+                        window.nexus.visualFeedback.showToast('清潔成功！乾淨度 100%', 'success');
+                    }
                 }
-                else if(type==='phone') { takePhoto(); }
-                else if(type==='bed') { speak(getRandomText('bed')); }
-                else if(type==='ball') { spawnBall(); speak(getRandomText('ball')); } 
-                else if(type==='book') { speak(getRandomText('book')); playSound('bad'); }
+                else if(type==='phone') {
+                    takePhoto();
+                    // NEXUS 反饋
+                    if (window.nexus?.visualFeedback) {
+                        window.nexus.visualFeedback.showToast('拍照成功！照片已下載', 'success');
+                    }
+                }
+                else if(type==='bed') {
+                    speak(getRandomText('bed'));
+                    // NEXUS 反饋
+                    if (window.nexus?.visualFeedback) {
+                        window.nexus.visualFeedback.showToast('寵物想睡覺了...', 'info');
+                    }
+                }
+                else if(type==='ball') {
+                    spawnBall();
+                    speak(getRandomText('ball'));
+                    // NEXUS 反饋
+                    if (window.nexus?.visualFeedback) {
+                        window.nexus.visualFeedback.showToast('足球已生成！', 'success');
+                    }
+                }
+                else if(type==='book') {
+                    speak(getRandomText('book'));
+                    playSound('bad');
+                    // NEXUS 反饋
+                    if (window.nexus?.visualFeedback) {
+                        window.nexus.visualFeedback.showToast('寵物不喜歡讀書...', 'warning');
+                    }
+                }
             }
             updateBars();
         }
 
         // --- 結局與特殊功能 ---
-        function forceFeedPoop(el) { 
-            el.remove(); 
-            poopCount = Math.max(0, poopCount-1); 
+        function forceFeedPoop(el) {
+            el.remove();
+            poopCount = Math.max(0, poopCount-1);
             
-            if(isJennifer) { 
+            if(isJennifer) {
                 // Jennifer 發怒結局
-                isGameOver = true; 
-                petImg.classList.add('sick'); 
-                speak(getRandomText('eat_poop_anger')); 
-                playSound('bad'); 
-                setTimeout(() => { 
-                    petImg.classList.remove('sick'); 
-                    petImg.classList.add('attack'); 
-                    playSound('scream'); 
-                    setTimeout(() => { 
-                        document.getElementById('game-over-screen').style.display = 'flex'; 
-                        document.querySelector('.dock').style.display = 'none'; 
-                        document.getElementById('status-panel').style.display = 'none'; 
-                    }, 400); 
-                }, 1500); 
-            } else { 
+                isGameOver = true;
+                petImg.classList.add('sick');
+                speak(getRandomText('eat_poop_anger'));
+                playSound('bad');
+                
+                // NEXUS 反饋
+                if (window.nexus?.visualFeedback) {
+                    window.nexus.visualFeedback.showToast('Jennifer 發怒了！', 'error');
+                }
+                
+                setTimeout(() => {
+                    petImg.classList.remove('sick');
+                    petImg.classList.add('attack');
+                    playSound('scream');
+                    
+                    // NEXUS 遊戲結束記錄
+                    if (window.nexus?.gameProgress) {
+                        window.nexus.gameProgress.recordGamePlay('ai-pet', 0, Date.now() - gameStartTime);
+                    }
+                    
+                    setTimeout(() => {
+                        document.getElementById('game-over-screen').style.display = 'flex';
+                        document.querySelector('.dock').style.display = 'none';
+                        document.getElementById('status-panel').style.display = 'none';
+                        
+                        // NEXUS 成就解鎖
+                        if (window.nexus?.gameProgress) {
+                            window.nexus.gameProgress.unlockAchievement('firstWin');
+                        }
+                    }, 400);
+                }, 1500);
+            } else {
                 // 普通模式變悲傷
-                isSad = true; 
-                petImg.classList.add('sad'); 
-                speak(getRandomText('eat_poop_sad')); 
-                playSound('bad'); 
-                stats.clean = 0; 
-                stats.hunger = 100; 
-                updateBars(); 
-            } 
+                isSad = true;
+                petImg.classList.add('sad');
+                speak(getRandomText('eat_poop_sad'));
+                playSound('bad');
+                stats.clean = 0;
+                stats.hunger = 100;
+                updateBars();
+                
+                // NEXUS 反饋
+                if (window.nexus?.visualFeedback) {
+                    window.nexus.visualFeedback.showToast('寵物傷心了...', 'warning');
+                }
+            }
         }
 
         function cleanPoop(el) { 
