@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>NEXUS Game Center</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Orbitron:wght@400;500;700;900&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#00d0ff", // Neon Blue
+                        "accent": "#ff0055", // Neon Pink
+                        "background-light": "#f5f8f8",
+                        "background-dark": "#0f0c29", // Deep purple/black base
+                    },
+                    backgroundImage: {
+                        'cyber-gradient': 'linear-gradient(to bottom right, #0f0c29, #302b63, #24243e)',
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk", "sans-serif"],
+                        "orbitron": ["Orbitron", "sans-serif"],
+                    },
+                    boxShadow: {
+                        'neon-blue': '0 0 10px rgba(0, 208, 255, 0.5), 0 0 20px rgba(0, 208, 255, 0.3)',
+                        'neon-pink': '0 0 10px rgba(255, 0, 85, 0.5), 0 0 20px rgba(255, 0, 85, 0.3)',
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom scrollbar for cyberpunk feel */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f0c29; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #302b63; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #00d0ff; 
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-display min-h-screen flex flex-col overflow-x-hidden">
+<!-- Background Gradient Wrapper -->
+<div class="fixed inset-0 z-[-1] bg-cyber-gradient pointer-events-none"></div>
+<!-- Scanning Line Overlay Effect -->
+<div class="fixed inset-0 z-[-1] pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
+<!-- Navigation -->
+<header class="sticky top-0 z-50 w-full border-b border-white/10 bg-[#0f0c29]/80 backdrop-blur-md">
+<div class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
+<div class="flex items-center justify-between h-20">
+<!-- Logo -->
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-4xl animate-pulse">sports_esports</span>
+<h1 class="font-orbitron text-2xl md:text-3xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent drop-shadow-[0_0_10px_rgba(0,208,255,0.5)]">
+                        NEXUS
+                    </h1>
+</div>
+<!-- Desktop Nav Links -->
+<nav class="hidden md:flex items-center gap-8">
+<a class="text-sm font-bold uppercase tracking-widest text-white/70 hover:text-primary transition-colors border-b-2 border-transparent hover:border-primary pb-1" href="#">Motion</a>
+<a class="text-sm font-bold uppercase tracking-widest text-white/70 hover:text-primary transition-colors border-b-2 border-transparent hover:border-primary pb-1" href="#">Arcade</a>
+<a class="text-sm font-bold uppercase tracking-widest text-white/70 hover:text-primary transition-colors border-b-2 border-transparent hover:border-primary pb-1" href="#">Classics</a>
+<a class="text-sm font-bold uppercase tracking-widest text-white/70 hover:text-primary transition-colors border-b-2 border-transparent hover:border-primary pb-1" href="#">Tournaments</a>
+</nav>
+<!-- Actions -->
+<div class="flex items-center gap-4">
+<!-- Search -->
+<div class="hidden sm:flex items-center bg-white/5 border border-white/10 rounded-full px-4 h-10 w-64 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary transition-all">
+<span class="material-symbols-outlined text-white/50 text-xl">search</span>
+<input class="bg-transparent border-none text-white placeholder-white/50 focus:ring-0 w-full text-sm font-medium" placeholder="Search games..." type="text"/>
+</div>
+<!-- Notification -->
+<button class="relative p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-accent rounded-full animate-ping"></span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-accent rounded-full"></span>
+</button>
+<!-- Profile -->
+<div class="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-accent p-[2px] cursor-pointer hover:shadow-neon-blue transition-shadow">
+<div class="h-full w-full rounded-full overflow-hidden bg-black" data-alt="User Avatar Cyberpunk Style">
+<img alt="User" class="h-full w-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA1qbFsum_xtFzB7rX6nXU6GS_cfXGa0InvZjWalnwQa_RU6NkSxBG7ONoTsFGigoXv12ljmyd-i33W-NhuNBoId7J8-F5Id6Do4q4LGDeoT9VgU9i501KwY76R9aD0Jgq7nyVO05gnMF03GRNshZHu3X0zIVKwrEfnWwbTDF9rfliR5uG4Sm7AeH0pLsBQ11bR9wFfe7F5xJCeof9aECfzQbWQCo7ePKldiDKXbzgw3vOB_rA3Chu9Fmq0x5YFsDN_ntVJHg4OjMc"/>
+</div>
+</div>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="flex-grow max-w-[1440px] mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 space-y-12">
+<!-- Hero Section -->
+<section class="relative w-full rounded-2xl overflow-hidden border border-white/10 group shadow-2xl shadow-black/50">
+<!-- Hero Background Image -->
+<div class="absolute inset-0 bg-cover bg-center z-0 transition-transform duration-700 group-hover:scale-105" data-alt="Futuristic spaceship cockpit dodging asteroids in deep space with neon trails" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCXQ8ZqPjrzpVfMM7NVEsc3TzYIDl6nUwquoX0Jg2HSJ-G4IppLymKz5adaSsFnt64Z9WOlMdaiUtgwaN0oFO53BL4Bytu1084Utd71BBRaM0ym4vL8SktpLXlsaIT8fYD_mYcNWblkUxtFliEjx9cjA0ha3M13FIE3MAhNHrJbhWKQ9utf6RzA2NXZ06gM67G0sXll-mI3WsOlexdxGQVgsMTlf4JcBZkxpc81xM7wnC9OMW2_RPevqvJ55n1jjFY3nOsjXht84MY');">
+</div>
+<!-- Gradient Overlay -->
+<div class="absolute inset-0 bg-gradient-to-t from-[#0f0c29] via-[#0f0c29]/50 to-transparent z-10"></div>
+<!-- Scanning lines overlay on hero -->
+<div class="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] z-10 bg-[length:100%_2px,3px_100%] pointer-events-none"></div>
+<div class="relative z-20 flex flex-col items-start justify-end min-h-[500px] p-8 md:p-12 lg:p-16">
+<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/20 border border-accent/50 text-accent text-xs font-bold uppercase tracking-widest mb-4 backdrop-blur-sm">
+<span class="w-2 h-2 rounded-full bg-accent animate-pulse"></span>
+                    Featured Game
+                </div>
+<h2 class="font-orbitron text-5xl md:text-7xl font-black text-white leading-tight mb-2 tracking-tighter drop-shadow-lg">
+                    SPACE <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-white">DODGER</span>
+</h2>
+<h3 class="font-orbitron text-2xl md:text-3xl font-bold text-primary mb-6 tracking-wide uppercase">Galactic Run</h3>
+<p class="max-w-xl text-lg text-white/80 mb-8 font-light leading-relaxed">
+                    Experience the thrill of dodging asteroids in deep space. Now enhanced with AI-powered WebCam Motion controls for immersive gameplay.
+                </p>
+<div class="flex flex-wrap items-center gap-4">
+<button class="relative overflow-hidden group/btn bg-primary hover:bg-primary/90 text-black font-orbitron font-bold py-4 px-8 rounded-lg transition-all hover:shadow-neon-blue">
+<span class="relative z-10 flex items-center gap-2">
+<span class="material-symbols-outlined text-2xl">play_circle</span>
+                            PLAY NOW
+                        </span>
+<div class="absolute inset-0 -translate-x-full group-hover/btn:translate-x-0 bg-white/30 transition-transform duration-300 skew-x-12"></div>
+</button>
+<button class="bg-white/5 hover:bg-white/10 border border-white/20 text-white font-display font-bold py-4 px-6 rounded-lg backdrop-blur-md transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined">info</span>
+                        DETAILS
+                    </button>
+</div>
+</div>
+<!-- Progress Bar Aesthetic -->
+<div class="absolute bottom-0 left-0 w-full h-1 bg-white/10 z-30">
+<div class="h-full bg-primary w-1/3 shadow-[0_0_10px_#00d0ff]"></div>
+</div>
+</section>
+<!-- WebCam Motion Games -->
+<section>
+<div class="flex items-center justify-between mb-6">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-3xl">videocam</span>
+<h3 class="font-orbitron text-2xl font-bold text-white tracking-wide">WebCam Motion</h3>
+</div>
+<a class="text-primary hover:text-white text-sm font-bold uppercase tracking-wider flex items-center gap-1 transition-colors group" href="#">
+                    View All <span class="material-symbols-outlined text-base group-hover:translate-x-1 transition-transform">arrow_forward_ios</span>
+</a>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+<!-- Card 1 -->
+<div class="group relative bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-primary/50 transition-all hover:-translate-y-1 hover:shadow-neon-blue h-full flex flex-col">
+<div class="absolute top-3 left-3 z-10 bg-accent text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider shadow-lg">HOT</div>
+<div class="relative aspect-video overflow-hidden" data-alt="Person dancing in front of a neon city background game scene">
+<img alt="Body Movin" class="object-cover w-full h-full group-hover:scale-110 transition-transform duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCugz9MWVGGdrpao4MXEp5lpM21OnSWiP99GoS9KmjbCZGpJKn60vrMhnm8599xZpiNQRRzg6aAoh4XgcuGmpiW4AfIp-bE90zZtJvqaZooDIc-dccc1YczKyb0Pu7q1uF1WPWYmIvHNqXte-odKcVMqsvzl84CB-ul-Aw5T0BF47kfiXqsa-3q0xIJAmmPOPiwy1D8k58ahvy05oWOnVJEIL-5lNnnuWwtXXphPfZ1WZ51qNC7S5AtwSuA5AZ4mZYIrSVoCJgcp18"/>
+<div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
+<span class="material-symbols-outlined text-primary text-5xl drop-shadow-[0_0_10px_rgba(0,0,0,0.8)]">play_circle</span>
+</div>
+</div>
+<div class="p-4 flex flex-col flex-1">
+<h4 class="text-white font-bold text-lg mb-1 group-hover:text-primary transition-colors">Body Movin'</h4>
+<p class="text-white/50 text-sm mb-4">Dance to the beat</p>
+<div class="mt-auto flex items-center justify-between pt-3 border-t border-white/5">
+<span class="text-xs text-primary font-mono bg-primary/10 px-2 py-0.5 rounded">Motion</span>
+<div class="flex text-yellow-400 text-xs">
+<span class="material-symbols-outlined text-[14px] fill-current">star</span>
+<span class="ml-1 text-white/70">4.8</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="group relative bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-primary/50 transition-all hover:-translate-y-1 hover:shadow-neon-blue h-full flex flex-col">
+<div class="relative aspect-video overflow-hidden" data-alt="Ninja hand slicing through fruit game interface">
+<img alt="Ninja Swipe" class="object-cover w-full h-full group-hover:scale-110 transition-transform duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB8i6-Eud6tz3q07pO8CMAQtnjVbmryL6ie5ypjtLooCO2CqnwlmGDd0oSjIL-Vw7UIYaBaQi-YEOq3vhypwUm1UbjrG1mrmUv-hkRZaMsIfHFJVK8YLAfSftj6WIVI9VY6X2FK_5NmZF93vZYvmoQsM3r4ADcnt24WorG4qMK15RrZdvToAlL0nSdTWJexrrxnF9ULWAcTT_6k4NQ-glCwR5NRTzKhhXOzg42Z1QjqHay-AikwjB9KhJLqUlMdlpLI906DQ2ko9l4"/>
+<div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
+<span class="material-symbols-outlined text-primary text-5xl drop-shadow-[0_0_10px_rgba(0,0,0,0.8)]">play_circle</span>
+</div>
+</div>
+<div class="p-4 flex flex-col flex-1">
+<h4 class="text-white font-bold text-lg mb-1 group-hover:text-primary transition-colors">Ninja Swipe</h4>
+<p class="text-white/50 text-sm mb-4">Slice targets with hands</p>
+<div class="mt-auto flex items-center justify-between pt-3 border-t border-white/5">
+<span class="text-xs text-primary font-mono bg-primary/10 px-2 py-0.5 rounded">Action</span>
+<div class="flex text-yellow-400 text-xs">
+<span class="material-symbols-outlined text-[14px] fill-current">star</span>
+<span class="ml-1 text-white/70">4.5</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="group relative bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-primary/50 transition-all hover:-translate-y-1 hover:shadow-neon-blue h-full flex flex-col">
+<div class="absolute top-3 left-3 z-10 bg-primary text-black text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider shadow-lg">NEW</div>
+<div class="relative aspect-video overflow-hidden" data-alt="Person doing yoga pose with digital skeleton overlay">
+<img alt="Yoga Master" class="object-cover w-full h-full group-hover:scale-110 transition-transform duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB1K4fnDpq8p-pgtE089Deb0DpXHfxTkPrdYqRFpBWPTmtGlLfX9ij1onhulOxN4dR89_cDzyJwTNY4dDWjy08y5ogSRjooogv9IkIMgyNCJuLwtqzTiOpR5Xsh10G5aZpaHh9CTTywV-Idc8YPfbXJr8x7cekDq1Ues3NDTk2ChXl9fzx9LuGoS3fDWz5FbLu8tAl8oBmru_VMqt_ful3Mro95ivyWSbfVW0CB1oXvS2CIk2evqsvQtglcSGdtIprfn0yHoXlNjHQ"/>
+<div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
+<span class="material-symbols-outlined text-primary text-5xl drop-shadow-[0_0_10px_rgba(0,0,0,0.8)]">play_circle</span>
+</div>
+</div>
+<div class="p-4 flex flex-col flex-1">
+<h4 class="text-white font-bold text-lg mb-1 group-hover:text-primary transition-colors">Yoga Master</h4>
+<p class="text-white/50 text-sm mb-4">Zen poses challenge</p>
+<div class="mt-auto flex items-center justify-between pt-3 border-t border-white/5">
+<span class="text-xs text-primary font-mono bg-primary/10 px-2 py-0.5 rounded">Fitness</span>
+<div class="flex text-yellow-400 text-xs">
+<span class="material-symbols-outlined text-[14px] fill-current">star</span>
+<span class="ml-1 text-white/70">4.9</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 4 -->
+<div class="group relative bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-primary/50 transition-all hover:-translate-y-1 hover:shadow-neon-blue h-full flex flex-col">
+<div class="relative aspect-video overflow-hidden" data-alt="Boxing gloves hitting virtual targets in first person view">
+<img alt="Shadow Boxer" class="object-cover w-full h-full group-hover:scale-110 transition-transform duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA4ocHg9OgG2vrGazT_mpZgDAWDGcsc31pEch9ON51iljB8uhka5BjBkjbSkQBEQalXqQ9j8w3UbB3i6QkwVACHQo4XkkykqeP5XvSmRz4Jm14PrwxBc90P436BF3vJwcLvJtW7-ZnIFhc0pmjMOWO4rvs1wYgDiAW257KmtpNIL7JBog59wdDpjryUAqc7RT7NXcA6vUZv7cqCSzsM9c2_QfFFf-HcOinNIjNQWocCRgxxWvk5PmlCdt7hSomCq1aBom-HGTRj98U"/>
+<div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
+<span class="material-symbols-outlined text-primary text-5xl drop-shadow-[0_0_10px_rgba(0,0,0,0.8)]">play_circle</span>
+</div>
+</div>
+<div class="p-4 flex flex-col flex-1">
+<h4 class="text-white font-bold text-lg mb-1 group-hover:text-primary transition-colors">Shadow Boxer</h4>
+<p class="text-white/50 text-sm mb-4">High intensity workout</p>
+<div class="mt-auto flex items-center justify-between pt-3 border-t border-white/5">
+<span class="text-xs text-primary font-mono bg-primary/10 px-2 py-0.5 rounded">Sport</span>
+<div class="flex text-yellow-400 text-xs">
+<span class="material-symbols-outlined text-[14px] fill-current">star</span>
+<span class="ml-1 text-white/70">4.7</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Arcade Action -->
+<section>
+<div class="flex items-center justify-between mb-6">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-accent text-3xl">sports</span>
+<h3 class="font-orbitron text-2xl font-bold text-white tracking-wide">Arcade Action</h3>
+</div>
+<a class="text-primary hover:text-white text-sm font-bold uppercase tracking-wider flex items-center gap-1 transition-colors group" href="#">
+                    View All <span class="material-symbols-outlined text-base group-hover:translate-x-1 transition-transform">arrow_forward_ios</span>
+</a>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+<!-- Arcade Card 1 -->
+<div class="group flex bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:bg-white/10 hover:border-accent/50 transition-all cursor-pointer">
+<div class="w-1/3 relative overflow-hidden" data-alt="Pixel art spaceship shooting lasers">
+<img alt="Retro Blaster" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDg9ytTA3QciygnGdhUj09S6OipVn53anM_Fd8J2_uEcs8ddOqasuoFqbHsimqSfAGr9DWqhU4SXxN0tV2nfbkWON8ADZ2jPi7YZve6mm3osjZ1s_Kd1rtIXVIHDgkfF2qPbK19XujcK8tJ8puwVgECKLNkpDmkbySdLltr3EFxr0nIcg77EBRAlCpPesylKvwhNYrL6Z_hU9IjadTtHswjuwhEjE7Afw1TWKpapqL_F4KPqU00q1_a8r1S42BW6sFGIeN8T1fjeno"/>
+</div>
+<div class="w-2/3 p-4 flex flex-col justify-center">
+<h4 class="text-white font-bold text-lg group-hover:text-accent transition-colors">Retro Blaster</h4>
+<p class="text-white/50 text-sm line-clamp-1">Classic space shooter reimagined</p>
+<div class="flex items-center gap-2 mt-2">
+<span class="px-2 py-0.5 rounded bg-white/10 text-[10px] text-white/70 font-mono">2D</span>
+<span class="px-2 py-0.5 rounded bg-white/10 text-[10px] text-white/70 font-mono">Shooter</span>
+</div>
+</div>
+</div>
+<!-- Arcade Card 2 -->
+<div class="group flex bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:bg-white/10 hover:border-accent/50 transition-all cursor-pointer">
+<div class="w-1/3 relative overflow-hidden" data-alt="Neon colored race car drifting">
+<img alt="Cyber Drift" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA2Xm9X_nK20B4E4cGK5qwmbFqkaRf7t6UdVPx4OkXvBp4oyxTHqHrCSSPUNB2pO31oCxcl8q0JnAgBj5S7fWCc91kjO7ok8xoYGI-_-DdKWdc1ewDV5IA2VZaUyoXGCq8OFI3jkLMi2RSqU5CsgGScLr6dRyfljOUE4iMfmVcjbYLHukAvRBZN1HWEKI5FywpHBglqb4Oh9AxGDRJhlrOtcZSCVWnRx46s3xILcgiznvWs46sqLVEkHA1RFCAJiPZlql95uKlejTI"/>
+</div>
+<div class="w-2/3 p-4 flex flex-col justify-center">
+<h4 class="text-white font-bold text-lg group-hover:text-accent transition-colors">Cyber Drift</h4>
+<p class="text-white/50 text-sm line-clamp-1">Neon streets racing</p>
+<div class="flex items-center gap-2 mt-2">
+<span class="px-2 py-0.5 rounded bg-white/10 text-[10px] text-white/70 font-mono">Racing</span>
+<span class="px-2 py-0.5 rounded bg-white/10 text-[10px] text-white/70 font-mono">Multiplayer</span>
+</div>
+</div>
+</div>
+<!-- Arcade Card 3 -->
+<div class="group flex bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:bg-white/10 hover:border-accent/50 transition-all cursor-pointer">
+<div class="w-1/3 relative overflow-hidden" data-alt="Colorful balls matching puzzle">
+<img alt="Neon Pop" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC0-Mkht6E5m2xAe3YZnJYMJNkdSaIMG7oiz2GlTQPqQp7vPdx_xuZEbKBb-AT4sqd8CmrNe9YNdYCy0yOU64YRlzTY91CkzwxHv4Xi13YV5nXVpZEOWdEC_C4HS2weFRgRt9JLJyjvjbye7dpkPZouXg6yODmfrC4x7ByCzXczzvd5k33wynQeiHGkS8CDA7chGAxEkSnFmhOLKjFIucL76e2d4UPLElkQAbbAUsMTHIwg1Kg15YzT6dNCpWL5n6iEup0dUu757N4"/>
+</div>
+<div class="w-2/3 p-4 flex flex-col justify-center">
+<h4 class="text-white font-bold text-lg group-hover:text-accent transition-colors">Neon Pop</h4>
+<p class="text-white/50 text-sm line-clamp-1">Addictive bubble shooter</p>
+<div class="flex items-center gap-2 mt-2">
+<span class="px-2 py-0.5 rounded bg-white/10 text-[10px] text-white/70 font-mono">Puzzle</span>
+<span class="px-2 py-0.5 rounded bg-white/10 text-[10px] text-white/70 font-mono">Casual</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Classic & Brain (Compact Grid) -->
+<section>
+<div class="flex items-center justify-between mb-6">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-3xl">psychology</span>
+<h3 class="font-orbitron text-2xl font-bold text-white tracking-wide">Brain &amp; Classic</h3>
+</div>
+</div>
+<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+<!-- Mini Card -->
+<a class="group block bg-white/5 rounded-lg p-3 hover:bg-white/10 hover:shadow-neon-pink transition-all text-center border border-white/5 hover:border-accent/30" href="#">
+<div class="w-12 h-12 mx-auto mb-2 rounded bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-xl shadow-lg">♟️</div>
+<p class="text-white font-medium text-sm group-hover:text-accent truncate">Chess 3D</p>
+</a>
+<!-- Mini Card -->
+<a class="group block bg-white/5 rounded-lg p-3 hover:bg-white/10 hover:shadow-neon-pink transition-all text-center border border-white/5 hover:border-accent/30" href="#">
+<div class="w-12 h-12 mx-auto mb-2 rounded bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center text-xl shadow-lg">🧩</div>
+<p class="text-white font-medium text-sm group-hover:text-accent truncate">Sudoku X</p>
+</a>
+<!-- Mini Card -->
+<a class="group block bg-white/5 rounded-lg p-3 hover:bg-white/10 hover:shadow-neon-pink transition-all text-center border border-white/5 hover:border-accent/30" href="#">
+<div class="w-12 h-12 mx-auto mb-2 rounded bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-xl shadow-lg">🐍</div>
+<p class="text-white font-medium text-sm group-hover:text-accent truncate">Snake.io</p>
+</a>
+<!-- Mini Card -->
+<a class="group block bg-white/5 rounded-lg p-3 hover:bg-white/10 hover:shadow-neon-pink transition-all text-center border border-white/5 hover:border-accent/30" href="#">
+<div class="w-12 h-12 mx-auto mb-2 rounded bg-gradient-to-br from-red-500 to-pink-600 flex items-center justify-center text-xl shadow-lg">🧱</div>
+<p class="text-white font-medium text-sm group-hover:text-accent truncate">Tetris Zone</p>
+</a>
+<!-- Mini Card -->
+<a class="group block bg-white/5 rounded-lg p-3 hover:bg-white/10 hover:shadow-neon-pink transition-all text-center border border-white/5 hover:border-accent/30" href="#">
+<div class="w-12 h-12 mx-auto mb-2 rounded bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center text-xl shadow-lg">🃏</div>
+<p class="text-white font-medium text-sm group-hover:text-accent truncate">Solitaire</p>
+</a>
+<!-- Mini Card -->
+<a class="group block bg-white/5 rounded-lg p-3 hover:bg-white/10 hover:shadow-neon-pink transition-all text-center border border-white/5 hover:border-accent/30" href="#">
+<div class="w-12 h-12 mx-auto mb-2 rounded bg-gradient-to-br from-gray-500 to-slate-600 flex items-center justify-center text-xl shadow-lg">💣</div>
+<p class="text-white font-medium text-sm group-hover:text-accent truncate">Minesweeper</p>
+</a>
+</div>
+</section>
+<!-- Newsletter / CTA -->
+<section class="rounded-2xl bg-gradient-to-r from-primary/10 to-accent/10 border border-white/10 p-8 md:p-12 relative overflow-hidden">
+<!-- Abstract graphic elements -->
+<div class="absolute top-0 right-0 w-64 h-64 bg-primary/20 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2"></div>
+<div class="absolute bottom-0 left-0 w-64 h-64 bg-accent/20 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/2"></div>
+<div class="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
+<div class="md:w-1/2">
+<h2 class="font-orbitron text-2xl md:text-3xl font-bold text-white mb-2">JOIN THE <span class="text-primary">NEXUS</span> ELITE</h2>
+<p class="text-white/70">Get exclusive access to beta tests, new game alerts, and weekly tournaments.</p>
+</div>
+<div class="md:w-1/2 w-full flex gap-2">
+<input class="flex-1 bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-white/40 focus:border-primary focus:ring-1 focus:ring-primary outline-none" placeholder="Enter your email" type="email"/>
+<button class="bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white font-bold py-3 px-6 rounded-lg transition-opacity whitespace-nowrap">
+                        SUBSCRIBE
+                    </button>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="mt-12 border-t border-white/5 bg-[#0a081c] py-12">
+<div class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
+<div class="flex flex-col md:flex-row justify-between items-start gap-8">
+<!-- Brand -->
+<div class="max-w-xs">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-white/30 text-2xl">sports_esports</span>
+<h2 class="font-orbitron text-xl font-bold text-white/50 tracking-wider">NEXUS</h2>
+</div>
+<p class="text-white/30 text-sm">The ultimate destination for next-gen web gaming. Immerse yourself in the future of play.</p>
+</div>
+<!-- Links -->
+<div class="grid grid-cols-2 md:grid-cols-3 gap-8 md:gap-16">
+<div>
+<h4 class="text-white font-bold mb-4 text-sm uppercase tracking-wider">Platform</h4>
+<ul class="space-y-2 text-sm text-white/50">
+<li><a class="hover:text-primary transition-colors" href="#">Browse Games</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Tournaments</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Leaderboards</a></li>
+</ul>
+</div>
+<div>
+<h4 class="text-white font-bold mb-4 text-sm uppercase tracking-wider">Support</h4>
+<ul class="space-y-2 text-sm text-white/50">
+<li><a class="hover:text-primary transition-colors" href="#">Help Center</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Terms of Service</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Privacy Policy</a></li>
+</ul>
+</div>
+<div>
+<h4 class="text-white font-bold mb-4 text-sm uppercase tracking-wider">Social</h4>
+<div class="flex gap-4">
+<a class="w-8 h-8 rounded bg-white/5 flex items-center justify-center text-white/50 hover:bg-primary hover:text-black transition-all" href="#">
+<span class="text-xs">TW</span>
+</a>
+<a class="w-8 h-8 rounded bg-white/5 flex items-center justify-center text-white/50 hover:bg-primary hover:text-black transition-all" href="#">
+<span class="text-xs">DC</span>
+</a>
+<a class="w-8 h-8 rounded bg-white/5 flex items-center justify-center text-white/50 hover:bg-primary hover:text-black transition-all" href="#">
+<span class="text-xs">YT</span>
+</a>
+</div>
+</div>
+</div>
+</div>
+<div class="border-t border-white/5 mt-12 pt-8 text-center md:text-left text-xs text-white/20">
+<p>© 2023 NEXUS Game Center. All rights reserved. System Operational.</p>
+</div>
+</div>
+</footer>
+</body></html>
