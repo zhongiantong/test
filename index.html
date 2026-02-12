@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html class="dark" lang="zh-HK">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>NEXUS Game Center | 個人遊戲空間</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@400;500;700;900&family=Space+Grotesk:wght@300;400;500;600;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#2997ff", // Apple Blue (from home_1)
+                        "primary-dark": "#0071e3",
+                        "accent": "#ff0055", // Neon Pink (from home_2)
+                        "glass-bg": "rgba(28, 28, 30, 0.65)",
+                        "glass-border": "rgba(255, 255, 255, 0.1)",
+                        "deep-bg": "#000000",
+                        "background-dark": "#0f0c29", // Cyberpunk dark (from home_2)
+                    },
+                    backgroundImage: {
+                        'apple-gradient': 'radial-gradient(circle at 50% 0%, #2a2a3e 0%, #000000 100%)',
+                        'mesh-gradient': 'radial-gradient(at 0% 0%, rgba(41, 151, 255, 0.15) 0px, transparent 50%), radial-gradient(at 100% 0%, rgba(142, 68, 173, 0.15) 0px, transparent 50%)',
+                        'cyber-gradient': 'linear-gradient(to bottom right, #0f0c29, #302b63, #24243e)',
+                    },
+                    fontFamily: {
+                        "sans": ["Inter", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "Helvetica Neue", "Arial", "sans-serif"],
+                        "orbitron": ["Orbitron", "sans-serif"],
+                        "display": ["Space Grotesk", "sans-serif"],
+                    },
+                    boxShadow: {
+                        'glass': '0 8px 32px 0 rgba(0, 0, 0, 0.3)',
+                        'soft': '0 10px 40px -10px rgba(0,0,0,0.5)',
+                        'glow': '0 0 20px rgba(41, 151, 255, 0.3)',
+                        'neon-blue': '0 0 10px rgba(0, 208, 255, 0.5), 0 0 20px rgba(0, 208, 255, 0.3)',
+                        'neon-pink': '0 0 10px rgba(255, 0, 85, 0.5), 0 0 20px rgba(255, 0, 85, 0.3)',
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1rem",
+                        "3xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .backdrop-blur-xl {
+                backdrop-filter: blur(20px);
+                -webkit-backdrop-filter: blur(20px);
+            }
+            .glass-card {
+                @apply bg-[#1c1c1e]/60 backdrop-blur-xl border border-white/10 rounded-[28px] shadow-glass transition-all duration-500 ease-out;
+            }
+            .glass-card:hover {
+                @apply bg-[#2c2c2e]/70 border-white/20 scale-[1.01] shadow-soft;
+            }
+            .text-gradient {
+                background: linear-gradient(135deg, #fff 0%, #a1a1aa 100%);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+            }
+            .neon-text {
+                text-shadow: 0 0 10px rgba(0, 208, 255, 0.7), 0 0 20px rgba(0, 208, 255, 0.5);
+            }
+            
+            /* Mobile optimizations */
+            @media (max-width: 640px) {
+                .mobile-padding {
+                    @apply px-4;
+                }
+                .mobile-text-lg {
+                    @apply text-lg;
+                }
+                .mobile-text-xl {
+                    @apply text-xl;
+                }
+            }
+        }
+        
+        /* Custom scrollbar - combined from both */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #000;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        
+        /* Cyberpunk scrollbar alternative */
+        .cyber-scrollbar::-webkit-scrollbar-track {
+            background: #0f0c29;
+        }
+        .cyber-scrollbar::-webkit-scrollbar-thumb {
+            background: #302b63;
+        }
+        .cyber-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #00d0ff;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .hero-content h2 {
+                font-size: 2.5rem !important;
+                line-height: 1.2 !important;
+            }
+            .hero-content h3 {
+                font-size: 1.5rem !important;
+            }
+            .game-card-horizontal {
+                min-width: 280px !important;
+            }
+        }
+        
+        @media (max-width: 640px) {
+            .hero-content h2 {
+                font-size: 2rem !important;
+            }
+            .section-padding {
+                @apply px-4 py-8;
+            }
+            .mobile-stack {
+                @apply flex-col;
+            }
+        }
+        
+        /* Touch-friendly buttons */
+        @media (hover: none) and (pointer: coarse) {
+            button, .glass-card, a {
+                @apply active:scale-95;
+            }
+            .glass-card:hover {
+                transform: none !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-deep-bg text-white font-sans min-h-screen flex flex-col antialiased selection:bg-primary/30 selection:text-white overflow-x-hidden">
+    <!-- Background Layers - Combined -->
+    <div class="fixed inset-0 z-[-2] bg-apple-gradient"></div>
+    <div class="fixed inset-0 z-[-2] bg-mesh-gradient opacity-80 pointer-events-none"></div>
+    <div class="fixed inset-0 z-[-1] bg-cyber-gradient opacity-60 pointer-events-none"></div>
+    <div class="fixed inset-0 z-[-1] pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10 mix-blend-overlay"></div>
+
+    <!-- Header/Navigation - Hybrid Design -->
+    <header class="sticky top-0 z-50 w-full bg-[rgba(22,22,23,0.8)] backdrop-blur-md border-b border-white/10 transition-all duration-300">
+        <div class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <!-- Logo - Combined -->
+            <div class="flex items-center gap-3">
+                <a class="text-white/90 hover:text-white transition-colors" href="#">
+                    <span class="material-symbols-outlined text-primary text-3xl">sports_esports</span>
+                </a>
+                <div class="flex flex-col">
+                    <h1 class="font-orbitron text-xl md:text-2xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent drop-shadow-[0_0_10px_rgba(0,208,255,0.5)]">
+                        NEXUS
+                    </h1>
+                    <p class="text-[10px] text-gray-400 font-medium tracking-wide hidden sm:block">Next Gen Personal Game Portal</p>
+                </div>
+            </div>
+
+            <!-- Desktop Navigation - Combined -->
+            <nav class="hidden md:flex items-center gap-8">
+                <a class="text-sm font-medium tracking-wide text-white/80 hover:text-primary transition-colors border-b-2 border-transparent hover:border-primary pb-1" href="#">
+                    <span class="material-symbols-outlined text-base mr-1">videocam</span>
+                    Motion
+                </a>
+                <a class="text-sm font-medium tracking-wide text-white/80 hover:text-primary transition-colors border-b-2 border-transparent hover:border-primary pb-1" href="#">
+                    <span class="material-symbols-outlined text-base mr-1">sports_esports</span>
+                    Arcade
+                </a>
+                <a class="text-sm font-medium tracking-wide text-white/80 hover:text-primary transition-colors border-b-2 border-transparent hover:border-primary pb-1" href="#">
+                    <span class="material-symbols-outlined text-base mr-1">psychology</span>
+                    Classic
+                </a>
+                <a class="text-sm font-medium tracking-wide text-white/80 hover:text-primary transition-colors border-b-2 border-transparent hover:border-primary pb-1" href="#">
+                    <span class="material-symbols-outlined text-base mr-1">pets</span>
+                    AI Pets
+                </a>
+            </nav>
+
+            <!-- Actions - Combined from home_2 -->
+            <div class="flex items-center gap-4">
+                <!-- Search - from home_2 -->
+                <div class="hidden sm:flex items-center bg-white/5 border border-white/10 rounded-full px-4 h-10 w-48 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary transition-all">
+                    <span class="material-symbols-outlined text-white/50 text-xl">search</span>
+                    <input class="bg-transparent border-none text-white placeholder-white/50 focus:ring-0 w-full text-sm font-medium ml-2" placeholder="搜尋遊戲..." type="text"/>
+                </div>
+                
+                <!-- Notification - from home_2 -->
+                <button class="relative p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors">
+                    <span class="material-symbols-outlined">notifications</span>
+                    <span class="absolute top-2 right-2 w-2 h-2 bg-accent rounded-full animate-ping"></span>
+                    <span class="absolute top-2 right-2 w-2 h-2 bg-accent rounded-full"></span>
+                </button>
+                
+                <!-- Profile - Combined -->
+                <div class="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-accent p-[2px] cursor-pointer hover:shadow-neon-blue transition-shadow">
+                    <div class="h-full w-full rounded-full overflow-hidden bg-black">
+                        <img alt="User" class="h-full w-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA1qbFsum_xtFzB7rX6nXU6GS_cfXGa0InvZjWalnwQa_RU6NkSxBG7ONoTsFGigoXv12ljmyd-i33W-NhuNBoId7J8-F5Id6Do4q4LGDeoT9VgU9i501KwY76R9aD0Jgq7nyVO05gnMF03GRNshZHu3X0zIVKwrEfnWwbTDF9rfliR5uG4Sm7AeH0pLsBQ11bR9wFfe7F5xJCeof9aECfzQbWQCo7ePKldiDKXbzgw3vOB_rA3Chu9Fmq0x5YFsDN_ntVJHg4OjMc"/>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow w-full pt-4 pb-20">
+        <!-- Hero Section - Combined -->
+        <section class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-12">
+            <div class="relative w-full rounded-[40px] overflow-hidden bg-black aspect-[21/9] shadow-2xl group cursor-pointer border border-white/10">
+                <!-- Hero Background - from home_1 -->
+                <div class="absolute inset-0 z-0">
+                    <img alt="Space Dodger Hero" class="w-full h-full object-cover opacity-80 transition-transform duration-[1.5s] ease-out group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCXQ8ZqPjrzpVfMM7NVEsc3TzYIDl6nUwquoX0Jg2HSJ-G4IppLymKz5adaSsFnt64Z9WOlMdaiUtgwaN0oFO53BL4Bytu1084Utd71BBRaM0ym4vL8SktpLXlsaIT8fYD_mYcNWblkUxtFliEjx9cjA0ha3M13FIE3MAhNHrJbhWKQ9utf6RzA2NXZ06gM67G0sXll-mI3WsOlexdxGQVgsMTlf4JcBZkxpc81xM7wnC9OMW2_RPevqvJ55n1jjFY3nOsjXht84MY"/>
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
+                </div>
+                
+                <!-- Scanning lines overlay - from home_2 -->
+                <div class="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] z-10 bg-[length:100%_2px,3px_100%] pointer-events-none opacity-50"></div>
+                
+                <!-- Hero Content - Combined -->
+                <div class="absolute bottom-0 left-0 w-full p-8 md:p-16 z-20 flex flex-col items-start">
+                    <!-- Badge - from home_2 -->
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/20 border border-accent/50 text-accent text-xs font-bold uppercase tracking-widest mb-4 backdrop-blur-sm">
+                        <span class="w-2 h-2 rounded-full bg-accent animate-pulse"></span>
+                        精選遊戲
+                    </div>
+                    
+                    <h2 class="font-orbitron text-5xl md:text-7xl font-black text-white leading-tight mb-2 tracking-tighter drop-shadow-lg">
+                        SPACE <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-white">DODGER</span>
+                    </h2>
+                    <h3 class="font-orbitron text-2xl md:text-3xl font-bold text-primary mb-6 tracking-wide uppercase">Galactic Run</h3>
+                    
+                    <p class="max-w-xl text-lg text-white/80 mb-8 font-light leading-relaxed drop-shadow-md">
+                        沉浸於零重力生存體驗。使用你的網路攝影機即時閃避小行星。無需控制器。
+                    </p>
+                    
+                    <div class="flex flex-wrap items-center gap-4">
+                        <button class="bg-white text-black hover:bg-gray-100 px-8 py-3 rounded-full font-medium text-sm transition-all shadow-lg active:scale-95 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-2xl">play_circle</span>
+                            立即遊玩
+                        </button>
+                        <button class="bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 px-8 py-3 rounded-full font-medium text-sm transition-all active:scale-95 flex items-center gap-2">
+                            <span class="material-symbols-outlined">info</span>
+                            了解更多
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Progress Bar - from home_2 -->
+                <div class="absolute bottom-0 left-0 w-full h-1 bg-white/10 z-30">
+                    <div class="h-full bg-primary w-1/3 shadow-[0_0_10px_#00d0ff]"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- WebCam Motion Games - Combined -->
+        <section class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="flex items-center justify-between mb-8">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined text-primary text-3xl">videocam</span>
+                    <h3 class="font-orbitron text-2xl font-bold text-white tracking-wide">WebCam Motion Games</h3>
+                </div>
+                <a class="text-primary hover:text-white text-sm font-bold uppercase tracking-wider flex items-center gap-1 transition-colors group" href="#">
+                    查看全部 <span class="material-symbols-outlined text-base group-hover:translate-x-1 transition-transform">arrow_forward_ios</span>
+                </a>
+            </div>
+            
+            <!-- Horizontal Scroll Container - from home_1 -->
+            <div class="flex overflow-x-auto gap-6 pb-8 hide-scrollbar snap-x snap-mandatory cyber-scrollbar">
+                <!-- Card 1: Space Dodger -->
+                <div class="min-w-[300px] md:min-w-[350px] glass-card snap-center group cursor-pointer flex flex-col h-[420px]">
+                    <div class="h-1/2 overflow-hidden relative rounded-t-[28px]">
+                        <img alt="Space Dodger" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCXQ8ZqPjrzpVfMM7NVEsc3TzYIDl6nUwquoX0Jg2HSJ-G4IppLymKz5adaSsFnt64Z9WOlMdaiUtgwaN0oFO53BL4Bytu1084Utd71BBRaM0ym4vL8SktpLXlsaIT8fYD_mYcNWblkUxtFliEjx9cjA0ha3M13FIE3MAhNHrJbhWKQ9utf6RzA2NXZ06gM67G0sXll-mI3WsOlexdxGQVgsMTlf4JcBZkxpc81xM7wnC9OMW2_RPevqvJ55n1jjFY3nOsjXht84MY"/>
+                        <div class="absolute top-4 right-4 bg-black/50 backdrop-blur-md rounded-full px-3 py-1 text-[10px] font-bold text-white border border-white/10">NEW</div>
+                        <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
+                            <span class="material-symbols-outlined text-primary text-5xl drop-shadow-[0_0_10px_rgba(0,0,0,0.8)]">play_circle</span>
+                        </div>
+                    </div>
+                    <div class="p-6 flex flex-col flex-1 justify-between">
+                        <div>
+                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 block">Motion</span>
+                            <h4 class="text-xl font-semibold text-white mb-2 group-hover:text-primary transition-colors">Space Dodger</h4>
+                            <p class="text-sm text-gray-400 font-normal leading-relaxed">使用身體移動閃避宇宙碎片。</p>
+                        </div>
+                        <div class="mt-4 flex items-center justify-between pt-3 border-t border-white/5">
+                            <button class="bg-[#2c2c2e] hover:bg-[#3a3a3c] text-primary text-sm font-medium py-2 px-4 rounded-full transition-colors">
+                                遊玩
+                            </button>
+                            <div class="flex text-yellow-400 text-xs">
+                                <span class="material-symbols-outlined text-[14px] fill-current">star</span>
+                                <span class="ml-1 text-white/70">4.8</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Card 2: Face Dance -->
+                <div class="min-w-[300px] md:min-w-[350px] glass-card snap-center group cursor-pointer flex flex-col h-[420px]">
+                    <div class="h-1/2 overflow-hidden relative rounded-t-[28px]">
+                        <img alt="Face Dance" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCugz9MWVGGdrpao4MXEp5lpM21OnSWiP99GoS9KmjbCZGpJKn60vrMhnm8599xZpiNQRRzg6aAoh4XgcuGmpiW4AfIp-bE90zZtJvqaZooDIc-dccc1YczKyb0Pu7q1uF1WPWYmIvHNqXte-odKcVMqsvzl84CB-ul-Aw5T0BF47kfiXqsa-3q0xIJAmmPOPiwy1D8k58ahvy05oWOnVJEIL-5lNnnuWwtXXphPfZ1WZ51qNC7S5AtwSuA5AZ4mZYIrSVoCJgcp18"/>
+                        <div class="absolute top-4 left-4 bg-accent text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider shadow-lg">HOT</div>
+                        <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
+                            <span class="material-symbols-outlined text-primary text-5xl drop-shadow-[0_0_10px_rgba(0,0,0,0.8)]">play_circle</span>
+                        </div>
+                    </div>
+                    <div class="p-6 flex flex-col flex-1 justify-between">
+                        <div>
+                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 block">Rhythm</span>
+                            <h4 class="text-xl font-semibold text-white mb-2 group-hover:text-primary transition-colors">Face Dance</h4>
+                            <p class="text-sm text-gray-400 font-normal leading-relaxed">用面部表情匹配表情符號。</p>
+                        </div>
+                        <div class="mt-4 flex items-center justify-between pt-3 border-t border-white/5">
+                            <button class="bg-[#2c2c2e] hover:bg-[#3a3a3c] text-primary text-sm font-medium py-2 px-4 rounded-full transition-colors">
+                                遊玩
+                            </button>
+                            <div class="flex text-yellow-400 text-xs">
+                                <span class="material-symbols-outlined text-[14px] fill-current">star</span>
+                                <span class="ml-1 text-white/70">4.9</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Card 3: RPS Cam -->
+                <div class="min-w-[300px] md:min-w-[350px] glass-card snap-center group cursor-pointer flex flex-col h-[420px]">
+                    <div class="h-1/2 overflow-hidden relative rounded-t-[28px]">
+                        <img alt="RPS Cam" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA4ocHg9OgG2vrGazT_mpZgDAWDGcsc31pEch9ON51iljB8uhka5BjBkjbSkQBEQalXqQ9j8w3UbB3i6QkwVACHQo4XkkykqeP5XvSmRz4Jm14PrwxBc90P436BF3vJwcLvJtW7-ZnIFhc0pmjMOWO4rvs1wYgDiAW257KmtpNIL7JBog59wdDpjryUAqc7RT7NXcA6vUZv7cqCSzsM9c2_QfFFf-HcOinNIjNQWocCRgxxWvk5PmlCdt7hSomCq1aBom-HGTRj98U"/>
+                        <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
+                            <span class="material-symbols-outlined text-primary text-5xl drop-shadow-[0_0_10px_rgba(0,0,0,0.8)]">play_circle</span>
+                        </div>
+                    </div>
+                    <div class="p-6 flex flex-col flex-1 justify-between">
+                        <div>
+                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 block">Hand Tracking</span>
+                            <h4 class="text-xl font-semibold text-white mb-2 group-hover:text-primary transition-colors">RPS Cam</h4>
+                            <p class="text-sm text-gray-400 font-normal leading-relaxed">經典猜拳對戰 AI。</p>
+                        </div>
+                        <div class="mt-4 flex items-center justify-between pt-3 border-t border-white/5">
+                            <button class="bg-[#2c2c2e] hover:bg-[#3a3a3c] text-primary text-sm font-medium py-2 px-4 rounded-full transition-colors">
+                                遊玩
+                            </button>
+                            <div class="flex text-yellow-400 text-xs">
+                                <span class="material-symbols-outlined text-[14px] fill-current">star</span>
+                                <span class="ml-1 text-white/70">4.5</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Card 4: Galaxy Catcher -->
+                <div class="min-w-[300px] md:min-w-[350px] glass-card snap-center group cursor-pointer flex flex-col h-[420px]">
+                    <div class="h-1/2 overflow-hidden relative rounded-t-[28px]">
+                        <img alt="Galaxy Catcher" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDg9ytTA3QciygnGdhUj09S6OipVn53anM_Fd8J2_uEcs8ddOqasuoFqbHsimqSfAGr9DWqhU4SXxN0tV2nfbkWON8ADZ2jPi7YZve6mm3osjZ1s_Kd1rtIXVIHDgkfF2qPbK19XujcK8tJ8puwVgECKLNkpDmkbySdLltr3EFxr0nIcg77EBRAlCpPesylKvwhNYrL6Z_hU9IjadTtHswjuwhEjE7Afw1TWKpapqL_F4KPqU00q1_a8r1S42BW6sFGIeN8T1fjeno"/>
+                        <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
+                            <span class="material-symbols-outlined text-primary text-5xl drop-shadow-[0_0_10px_rgba(0,0,0,0.8)]">play_circle</span>
+                        </div>
+                    </div>
+                    <div class="p-6 flex flex-col flex-1 justify-between">
+                        <div>
+                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 block">Casual</span>
+                            <h4 class="text-xl font-semibold text-white mb-2 group-hover:text-primary transition-colors">Galaxy Catcher</h4>
+                            <p class="text-sm text-gray-400 font-normal leading-relaxed">用手捕捉墜落的星星。</p>
+                        </div>
+                        <div class="mt-4 flex items-center justify-between pt-3 border-t border-white/5">
+                            <button class="bg-[#2c2c2e] hover:bg-[#3a3a3c] text-primary text-sm font-medium py-2 px-4 rounded-full transition-colors">
+                                遊玩
+                            </button>
+                            <div class="flex text-yellow-400 text-xs">
+                                <span class="material-symbols-outlined text-[14px] fill-current">star</span>
+                                <span class="ml-1 text-white/70">4.7</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- AI Pet Feature - from home_1 -->
+        <section class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="w-full rounded-[40px] overflow-hidden relative bg-[#1c1c1e] border border-white/5 flex flex-col md:flex-row items-center">
+                <div class="absolute inset-0 bg-gradient-to-r from-blue-900/20 to-purple-900/20 z-0"></div>
+                <div class="w-full md:w-1/2 p-10 md:p-16 relative z-10">
+                    <div class="inline-flex items-center gap-2 mb-4">
+                        <span class="material-symbols-outlined text-yellow-400">pets</span>
+                        <span class="text-sm font-semibold text-yellow-400 tracking-wide uppercase">AI Companion</span>
+                    </div>
+                    <h2 class="font-orbitron text-4xl md:text-5xl font-bold text-white mb-6">My AI Pet</h2>
+                    <p class="text-lg text-gray-300 font-light mb-8 leading-relaxed">
+                        領養獨一無二的數位夥伴。由先進 AI 驅動，你的寵物會根據你的互動、遊玩和照顧方式進化。
+                    </p>
+                    <button class="bg-white text-black hover:bg-gray-100 px-8 py-3 rounded-full font-medium text-sm transition-all shadow-glow flex items-center gap-2">
+                        <span class="material-symbols-outlined">pets</span>
+                        立即領養
+                    </button>
+                </div>
+                <div class="w-full md:w-1/2 h-80 md:h-[500px] relative overflow-hidden bg-gradient-to-br from-[#2a2a3e] to-black">
+                    <img alt="My AI Pet" class="w-full h-full object-cover opacity-90 mix-blend-overlay" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB1K4fnDpq8p-pgtE089Deb0DpXHfxTkPrdYqRFpBWPTmtGlLfX9ij1onhulOxN4dR89_cDzyJwTNY4dDWjy08y5ogSRjooogv9IkIMgyNCJuLwtqzTiOpR5Xsh10G5aZpaHh9CTTywV-Idc8YPfbXJr8x7cekDq1Ues3NDTk2ChXl9fzx9LuGoS3fDWz5FbLu8tAl8oBmru_VMqt_ful3Mro95ivyWSbfVW0CB1oXvS2CIk2evqsvQtglcSGdtIprfn0yHoXlNjHQ"/>
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <span class="material-symbols-outlined text-9xl text-white/10 blur-sm">smart_toy</span>
+                    </div>
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <div class="w-48 h-48 bg-gradient-to-tr from-blue-500 to-purple-500 rounded-full blur-[60px] opacity-40 animate-pulse"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Arcade Action - Combined -->
+        <section class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="flex items-center justify-between mb-8">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined text-accent text-3xl">sports_esports</span>
+                    <h3 class="font-orbitron text-2xl font-bold text-white tracking-wide">Arcade Action</h3>
+                </div>
+                <a class="text-primary hover:text-white text-sm font-bold uppercase tracking-wider flex items-center gap-1 transition-colors group" href="#">
+                    查看全部 <span class="material-symbols-outlined text-base group-hover:translate-x-1 transition-transform">arrow_forward_ios</span>
+                </a>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Card 1: Stress Buster -->
+                <div class="group cursor-pointer">
+                    <div class="aspect-[16/10] rounded-3xl overflow-hidden mb-4 relative shadow-lg border border-white/10">
+                        <img alt="Stress Buster" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA2Xm9X_nK20B4E4cGK5qwmbFqkaRf7t6UdVPx4OkXvBp4oyxTHqHrCSSPUNB2pO31oCxcl8q0JnAgBj5S7fWCc91kjO7ok8xoYGI-_-DdKWdc1ewDV5IA2VZaUyoXGCq8OFI3jkLMi2RSqU5CsgGScLr6dRyfljOUE4iMfmVcjbYLHukAvRBZN1HWEKI5FywpHBglqb4Oh9AxGDRJhlrOtcZSCVWnRx46s3xILcgiznvWs46sqLVEkHA1RFCAJiPZlql95uKlejTI"/>
+                        <div class="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors"></div>
+                        <div class="absolute bottom-4 left-4 w-10 h-10 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20">
+                            <span class="material-symbols-outlined text-white text-lg">bolt</span>
+                        </div>
+                    </div>
+                    <h4 class="text-lg font-medium text-white mb-1 group-hover:text-primary transition-colors">Stress Buster</h4>
+                    <p class="text-sm text-gray-500">高強度破壞療法。</p>
+                </div>
+                
+                <!-- Card 2: Neon Runner -->
+                <div class="group cursor-pointer">
+                    <div class="aspect-[16/10] rounded-3xl overflow-hidden mb-4 relative shadow-lg border border-white/10">
+                        <img alt="Neon Runner" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC0-Mkht6E5m2xAe3YZnJYMJNkdSaIMG7oiz2GlTQPqQp7vPdx_xuZEbKBb-AT4sqd8CmrNe9YNdYCy0yOU64YRlzTY91CkzwxHv4Xi13YV5nXVpZEOWdEC_C4HS2weFRgRt9JLJyjvjbye7dpkPZouXg6yODmfrC4x7ByCzXczzvd5k33wynQeiHGkS8CDA7chGAxEkSnFmhOLKjFIucL76e2d4UPLElkQAbbAUsMTHIwg1Kg15YzT6dNCpWL5n6iEup0dUu757N4"/>
+                        <div class="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors"></div>
+                        <div class="absolute bottom-4 left-4 w-10 h-10 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20">
+                            <span class="material-symbols-outlined text-white text-lg">directions_run</span>
+                        </div>
+                    </div>
+                    <h4 class="text-lg font-medium text-white mb-1 group-hover:text-primary transition-colors">Neon Runner</h4>
+                    <p class="text-sm text-gray-500">無限賽博龐克跑酷。</p>
+                </div>
+                
+                <!-- Card 3: Orbit Rhythm -->
+                <div class="group cursor-pointer">
+                    <div class="aspect-[16/10] rounded-3xl overflow-hidden mb-4 relative shadow-lg border border-white/10">
+                        <img alt="Orbit Rhythm" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCugz9MWVGGdrpao4MXEp5lpM21OnSWiP99GoS9KmjbCZGpJKn60vrMhnm8599xZpiNQRRzg6aAoh4XgcuGmpiW4AfIp-bE90zZtJvqaZooDIc-dccc1YczKyb0Pu7q1uF1WPWYmIvHNqXte-odKcVMqsvzl84CB-ul-Aw5T0BF47kfiXqsa-3q0xIJAmmPOPiwy1D8k58ahvy05oWOnVJEIL-5lNnnuWwtXXphPfZ1WZ51qNC7S5AtwSuA5AZ4mZYIrSVoCJgcp18"/>
+                        <div class="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors"></div>
+                        <div class="absolute bottom-4 left-4 w-10 h-10 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20">
+                            <span class="material-symbols-outlined text-white text-lg">music_note</span>
+                        </div>
+                    </div>
+                    <h4 class="text-lg font-medium text-white mb-1 group-hover:text-primary transition-colors">Orbit Rhythm</h4>
+                    <p class="text-sm text-gray-500">跟隨宇宙節奏點擊。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Classic & Brain Games - Combined -->
+        <section class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="flex items-center justify-between mb-8">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined text-primary text-3xl">psychology</span>
+                    <h3 class="font-orbitron text-2xl font-bold text-white tracking-wide">Classic & Brain Games</h3>
+                </div>
+                <a class="text-primary hover:text-white text-sm font-bold uppercase tracking-wider flex items-center gap-1 transition-colors group" href="#">
+                    查看全部 <span class="material-symbols-outlined text-base group-hover:translate-x-1 transition-transform">arrow_forward_ios</span>
+                </a>
+            </div>
+            
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                <!-- Mini Card 1: Chess 3D -->
+                <a class="group block glass-card p-4 hover:bg-white/10 hover:shadow-neon-pink transition-all text-center border border-white/5 hover:border-accent/30 rounded-2xl" href="#">
+                    <div class="w-12 h-12 mx-auto mb-3 rounded-[14px] bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-2xl shadow-lg">♟️</div>
+                    <p class="text-white font-medium text-sm group-hover:text-accent truncate">Chess 3D</p>
+                    <p class="text-xs text-gray-500 mt-1">策略對戰</p>
+                </a>
+                
+                <!-- Mini Card 2: Sudoku X -->
+                <a class="group block glass-card p-4 hover:bg-white/10 hover:shadow-neon-pink transition-all text-center border border-white/5 hover:border-accent/30 rounded-2xl" href="#">
+                    <div class="w-12 h-12 mx-auto mb-3 rounded-[14px] bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center text-2xl shadow-lg">🧩</div>
+                    <p class="text-white font-medium text-sm group-hover:text-accent truncate">Sudoku X</p>
+                    <p class="text-xs text-gray-500 mt-1">數字邏輯</p>
+                </a>
+                
+                <!-- Mini Card 3: Snake.io -->
+                <a class="group block glass-card p-4 hover:bg-white/10 hover:shadow-neon-pink transition-all text-center border border-white/5 hover:border-accent/30 rounded-2xl" href="#">
+                    <div class="w-12 h-12 mx-auto mb-3 rounded-[14px] bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-2xl shadow-lg">🐍</div>
+                    <p class="text-white font-medium text-sm group-hover:text-accent truncate">Snake.io</p>
+                    <p class="text-xs text-gray-500 mt-1">經典貪食蛇</p>
+                </a>
+                
+                <!-- Mini Card 4: Tetris Zone -->
+                <a class="group block glass-card p-4 hover:bg-white/10 hover:shadow-neon-pink transition-all text-center border border-white/5 hover:border-accent/30 rounded-2xl" href="#">
+                    <div class="w-12 h-12 mx-auto mb-3 rounded-[14px] bg-gradient-to-br from-red-500 to-pink-600 flex items-center justify-center text-2xl shadow-lg">🧱</div>
+                    <p class="text-white font-medium text-sm group-hover:text-accent truncate">Tetris Zone</p>
+                    <p class="text-xs text-gray-500 mt-1">方塊消除</p>
+                </a>
+                
+                <!-- Mini Card 5: Solitaire -->
+                <a class="group block glass-card p-4 hover:bg-white/10 hover:shadow-neon-pink transition-all text-center border border-white/5 hover:border-accent/30 rounded-2xl" href="#">
+                    <div class="w-12 h-12 mx-auto mb-3 rounded-[14px] bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center text-2xl shadow-lg">🃏</div>
+                    <p class="text-white font-medium text-sm group-hover:text-accent truncate">Solitaire</p>
+                    <p class="text-xs text-gray-500 mt-1">接龍遊戲</p>
+                </a>
+                
+                <!-- Mini Card 6: Minesweeper -->
+                <a class="group block glass-card p-4 hover:bg-white/10 hover:shadow-neon-pink transition-all text-center border border-white/5 hover:border-accent/30 rounded-2xl" href="#">
+                    <div class="w-12 h-12 mx-auto mb-3 rounded-[14px] bg-gradient-to-br from-gray-500 to-slate-600 flex items-center justify-center text-2xl shadow-lg">💣</div>
+                    <p class="text-white font-medium text-sm group-hover:text-accent truncate">Minesweeper</p>
+                    <p class="text-xs text-gray-500 mt-1">踩地雷</p>
+                </a>
+            </div>
+        </section>
+
+        <!-- Newsletter CTA - from home_2 -->
+        <section class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="rounded-2xl bg-gradient-to-r from-primary/10 to-accent/10 border border-white/10 p-8 md:p-12 relative overflow-hidden">
+                <!-- Abstract graphic elements -->
+                <div class="absolute top-0 right-0 w-64 h-64 bg-primary/20 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2"></div>
+                <div class="absolute bottom-0 left-0 w-64 h-64 bg-accent/20 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/2"></div>
+                <div class="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
+                    <div class="md:w-1/2">
+                        <h2 class="font-orbitron text-2xl md:text-3xl font-bold text-white mb-2">加入 <span class="text-primary">NEXUS</span> 精英</h2>
+                        <p class="text-white/70">獲得獨家測試資格、新遊戲通知和每週錦標賽。</p>
+                    </div>
+                    <div class="md:w-1/2 w-full flex gap-2">
+                        <input class="flex-1 bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-white/40 focus:border-primary focus:ring-1 focus:ring-primary outline-none" placeholder="輸入你的電子郵件" type="email"/>
+                        <button class="bg-gradient-to-r from-primary to-accent hover:opacity-90 text-white font-bold py-3 px-6 rounded-lg transition-opacity whitespace-nowrap">
+                            訂閱
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer - Combined -->
+    <footer class="bg-[#1c1c1e] border-t border-white/10 pt-16 pb-8">
+        <div class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
+                <div class="col-span-1 md:col-span-1">
+                    <div class="flex items-center gap-2 mb-4">
+                        <span class="material-symbols-outlined text-primary text-2xl">sports_esports</span>
+                        <h2 class="font-orbitron text-xl font-bold text-white tracking-wider">NEXUS</h2>
+                    </div>
+                    <p class="text-xs text-gray-500 leading-relaxed max-w-xs">
+                        透過沉浸式動作控制和 AI 整合重新定義網頁遊戲。為未來而設計。
+                    </p>
+                </div>
+                <div>
+                    <h4 class="text-xs font-semibold text-gray-200 mb-4">遊戲分類</h4>
+                    <ul class="space-y-2 text-xs text-gray-500">
+                        <li><a class="hover:text-primary transition-colors" href="#">Motion Games</a></li>
+                        <li><a class="hover:text-primary transition-colors" href="#">Arcade Action</a></li>
+                        <li><a class="hover:text-primary transition-colors" href="#">Classic & Brain</a></li>
+                        <li><a class="hover:text-primary transition-colors" href="#">AI Pets</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-xs font-semibold text-gray-200 mb-4">平台</h4>
+                    <ul class="space-y-2 text-xs text-gray-500">
+                        <li><a class="hover:text-primary transition-colors" href="#">瀏覽遊戲</a></li>
+                        <li><a class="hover:text-primary transition-colors" href="#">錦標賽</a></li>
+                        <li><a class="hover:text-primary transition-colors" href="#">排行榜</a></li>
+                        <li><a class="hover:text-primary transition-colors" href="#">幫助中心</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-xs font-semibold text-gray-200 mb-4">社交媒體</h4>
+                    <div class="flex gap-4">
+                        <a class="w-8 h-8 rounded bg-white/5 flex items-center justify-center text-white/50 hover:bg-primary hover:text-black transition-all" href="#">
+                            <span class="text-xs">TW</span>
+                        </a>
+                        <a class="w-8 h-8 rounded bg-white/5 flex items-center justify-center text-white/50 hover:bg-primary hover:text-black transition-all" href="#">
+                            <span class="text-xs">DC</span>
+                        </a>
+                        <a class="w-8 h-8 rounded bg-white/5 flex items-center justify-center text-white/50 hover:bg-primary hover:text-black transition-all" href="#">
+                            <span class="text-xs">YT</span>
+                        </a>
+                        <a class="w-8 h-8 rounded bg-white/5 flex items-center justify-center text-white/50 hover:bg-primary hover:text-black transition-all" href="#">
+                            <span class="material-symbols-outlined text-sm">mail</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4 text-[11px] text-gray-600">
+                <p>Copyright © 2024 NEXUS Game Center. All rights reserved.</p>
+                <div class="flex gap-6">
+                    <a class="hover:text-gray-400" href="#">隱私政策</a>
+                    <a class="hover:text-gray-400" href="#">使用條款</a>
+                    <a class="hover:text-gray-400" href="#">法律聲明</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript for interactivity -->
+    <script>
+        // Simple interactivity for the game portal
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add click handlers to all game cards
+            const gameCards = document.querySelectorAll('.glass-card, .group.cursor-pointer');
+            gameCards.forEach(card => {
+                card.addEventListener('click', function(e) {
+                    if (!e.target.closest('button') && !e.target.closest('a')) {
+                        console.log('Navigating to game:', this.querySelector('h4')?.textContent || 'Unknown game');
+                        // In a real implementation, this would navigate to the game page
+                        // window.location.href = 'game-page.html';
+                    }
+                });
+            });
+
+            // Search functionality
+            const searchInput = document.querySelector('input[placeholder="搜尋遊戲..."]');
+            if (searchInput) {
+                searchInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        const query = this.value.trim();
+                        if (query) {
+                            console.log('Searching for:', query);
+                            // Implement search functionality
+                            alert(`搜尋: ${query}`);
+                        }
+                    }
+                });
+            }
+
+            // Notification bell animation
+            const notificationBell = document.querySelector('button[aria-label*="notification"]');
+            if (notificationBell) {
+                notificationBell.addEventListener('click', function() {
+                    console.log('Notifications clicked');
+                    // Show notifications panel
+                });
+            }
+
+            // Hero section hover effect enhancement
+            const heroSection = document.querySelector('.group.cursor-pointer');
+            if (heroSection) {
+                heroSection.addEventListener('mouseenter', function() {
+                    const progressBar = this.querySelector('.h-full.bg-primary');
+                    if (progressBar) {
+                        progressBar.style.width = '50%';
+                    }
+                });
+                
+                heroSection.addEventListener('mouseleave', function() {
+                    const progressBar = this.querySelector('.h-full.bg-primary');
+                    if (progressBar) {
+                        progressBar.style.width = '33%';
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
